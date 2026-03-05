@@ -1,0 +1,298 @@
+﻿Summary,Issue key,Issue id,Issue Type,Status,Project key,Project name,Project type,Project lead,Project lead id,Project description,Priority,Resolution,Assignee,Assignee Id,Reporter,Reporter Id,Creator,Creator Id,Created,Updated,Last Viewed,Resolved,Due date,Votes,Labels,Description,Environment,Watchers,Watchers Id,Original estimate,Remaining Estimate,Time Spent,Work Ratio,Σ Original Estimate,Σ Remaining Estimate,Σ Time Spent,Security Level,Custom field (Atlassian project),Custom field (Atlassian project status),Custom field (Comments),Custom field (Delivery progress),Custom field (Delivery status),Custom field (Design file),Custom field (Designs ready),Custom field (Development),Custom field (Documents),Custom field (Effort),Custom field (Goals),Custom field (Idea archived),Custom field (Idea archived on),Custom field (Idea short description),Custom field (Impact),Custom field (Insights),Custom field (Issue color),Custom field (Linked items),Custom field (Project start),Custom field (Project target),Custom field (Rank),Custom field (Roadmap),Custom field (Score),Sprint,Custom field (Start date),Custom field (State),Custom field (Story point estimate),Custom field (Team),Custom field (Vulnerability),Custom field (Vulnerability),Parent,Parent key,Parent summary,Status Category,Status Category Changed
+Log Key Compliance Actions,SCRUM-36,10175,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,05/Mar/26 1:49 PM,,,0,"audit,logging","As a system administrator, I want key user actions logged so that actions are traceable for compliance and support. AC: login/profile/report/sync events logged with user and timestamp; logs visible for debug/demo.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0007r:,,,,,,3.0,,,,10167,SCRUM-28,Audit Logging and Traceability,To Do,05/Mar/26 1:38 PM
+Deadline Reminder Notifications,SCRUM-35,10174,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,,,,0,"notifications,deadlines","As a farmer, I want reminders for upcoming deadlines so that I do not miss compliance dates. AC: reminder before due date; tap opens task detail; reminders can be disabled.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0007j:,,,,,,3.0,,,,10166,SCRUM-27,Deadline Reminders and Notifications,To Do,05/Mar/26 1:38 PM
+Save Report Draft Offline and Sync Later,SCRUM-34,10173,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,,,,0,"offline,sync,mvp","As a farmer, I want to save report drafts offline and sync later so that poor connectivity does not block me. AC: save and reopen draft offline; queue unsent actions; auto-sync on reconnect with visible sync result.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0007b:,,,,,,8.0,,,,10165,SCRUM-26,Offline Draft and Sync,To Do,05/Mar/26 1:38 PM
+Submit Basic Compliance Report,SCRUM-33,10172,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,05/Mar/26 1:50 PM,,,0,"reporting,mvp","As a farmer, I want to submit one basic compliance report so that I can complete required reporting digitally. AC: required fields validated; successful submit shows confirmation; item appears in history.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i00073:,,,,,,8.0,,,,10164,SCRUM-25,Basic Report Workflow,To Do,05/Mar/26 1:38 PM
+Task Details in Plain Language,SCRUM-32,10171,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,,,,0,"tasks,ux","As a farmer, I want plain-language instructions for each task so that I can complete compliance correctly. AC: what/when/why shown; non-legal language; backend-configurable content.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0006v:,,,,,,5.0,,,,10163,SCRUM-24,Compliance Tasks Module,To Do,05/Mar/26 1:38 PM
+Personalized Task List with Deadlines,SCRUM-31,10170,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,05/Mar/26 1:41 PM,,,0,"tasks,mvp","As a farmer, I want to see my compliance tasks and deadlines so that I know what to do next. AC: list shows title/due date/status; overdue highlighted; content reflects profile rules.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0006n:,,,,,,8.0,,,,10163,SCRUM-24,Compliance Tasks Module,To Do,05/Mar/26 1:38 PM
+Create and Edit Farm Profile,SCRUM-30,10169,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,,,,0,"profile,mvp","As a farmer, I want to enter my farm details so that the app can show relevant compliance tasks. AC: create/edit profile; required field validation; local save and backend sync.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0006f:,,,,,,5.0,,,,10162,SCRUM-23,Farm Profile and Eligibility Inputs,To Do,05/Mar/26 1:38 PM
+Farmer Login and Session,SCRUM-29,10168,Story,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:49 PM,05/Mar/26 1:48 PM,,,0,"auth,mvp","As a farmer, I want to log in securely so that I can access my compliance workspace. AC: valid login opens dashboard; invalid credentials show clear error; session restores after app restart.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i00067:,,,,,,3.0,,,,10161,SCRUM-22,Identity and Access,To Do,05/Mar/26 1:38 PM
+Audit Logging and Traceability,SCRUM-28,10167,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"audit,logging,compliance","Log key actions (login, profile update, report submit, sync) with user and timestamp.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0005z:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Deadline Reminders and Notifications,SCRUM-27,10166,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"notifications,deadlines",Send reminders for upcoming deadlines and deep-link to task details.,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0005r:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Offline Draft and Sync,SCRUM-26,10165,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"offline,sync,reliability","Support offline draft save, sync queue, retry, and basic conflict policy.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0005j:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Basic Report Workflow,SCRUM-25,10164,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"reporting,mvp",Enable one basic compliance report submission with confirmation and history.,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0005b:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Compliance Tasks Module,SCRUM-24,10163,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"compliance,tasks,ux",Show personalized compliance tasks with due dates and plain-language guidance.,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i00053:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Farm Profile and Eligibility Inputs,SCRUM-23,10162,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"profile,rules-input",Capture and sync farm profile data used for compliance task personalization.,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0004v:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Identity and Access,SCRUM-22,10161,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"android,auth,security",Implement secure login/logout and session persistence for farmers.,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0004n:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+Mobile App Foundation,SCRUM-21,10160,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,High,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,05/Mar/26 1:38 PM,05/Mar/26 1:38 PM,,,,0,"android,mvp,foundation","Establish Android app architecture and core navigation for MVP. Scope: project setup, navigation skeleton, global loading and error states, basic telemetry hooks.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0004f:,,,,,,,,,,,,,To Do,05/Mar/26 1:38 PM
+"Report - Point(s) 3, 3.1",SCRUM-17,10124,Task,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,04/Mar/26 3:53 PM,04/Mar/26 3:53 PM,,,,0,,,,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i00047:,,,SCRUM questions Sprint 1,,,,,,,,,,To Do,04/Mar/26 3:53 PM
+"Market analysis, competitor and supplier analysis",SCRUM-16,10123,Task,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,04/Mar/26 3:50 PM,04/Mar/26 3:50 PM,,,,0,,,,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0003z:,,,SCRUM questions Sprint 1,,,,,,,,,,To Do,04/Mar/26 3:50 PM
+Updated questionnaire for interview of farmers,SCRUM-15,10122,Task,In Review,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Highest,,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,04/Mar/26 1:47 PM,04/Mar/26 3:49 PM,,,06/Mar/26 12:00 AM,0,,"h2. *Updated User Story*
+
+As a product team, I want to conduct semi-structured qualitative interviews with farmers to deeply understand CAP (SMR/GAEC) compliance pain points and validate whether our solution addresses real needs. So we can check problem-solution fit and gauge willingness to pay.
+
+----
+
+h2. *Interview Script*
+
+h3. *Opening (2 minutes)*
+
+""Thank you for taking the time to speak with me today. My name is [OUR TEAM MEMBER], and I'm a student at KTU working on a project about agricultural compliance.
+
+We're exploring how farmers experience CAP regulations and reporting requirements. There are no right or wrong answers—I'm just interested in learning from your experience. This conversation should take about 15-20 minutes.
+
+Everything you share will be kept confidential, and we won't attribute any specific comments to you by name. Are you comfortable if I take notes during our conversation? [If recording: May I record this for my notes? The recording will only be used internally and deleted after transcription.]
+
+Do you have any questions before we begin?""
+
+----
+
+h3. *Semi-Structured Interview Guide (15-17 minutes)*
+
+*Section 1: Farm Context & CAP Engagement (3-4 minutes)*
+
+*Q1: Tell me about your farm.*
+
+* _Probe:_ What do you grow/produce? How large is your operation?
+* _Probe:_ How long have you been farming?
+
+*Q2: How does the CAP fit into your farm's operations?*
+
+* _Probe:_ Do you currently receive CAP payments? For how long?
+* _Probe:_ What made you decide to participate (or not participate)?
+
+----
+
+*Section 2: Compliance Experience (6-8 minutes)*
+
+*Q3: Walk me through what happens when you need to handle CAP compliance and reporting. What does that process look like for you?*
+
+* _Probe:_ How much time does it typically take?
+* _Probe:_ What's the most time-consuming part?
+* _Probe:_ Do you handle this yourself or does someone help you?
+
+*Q4: When you think about SMR and GAEC requirements, what comes to mind?*
+
+* _Probe:_ Which specific requirements do you find most confusing or difficult?
+* _Probe:_ Can you give me an example of something that was particularly hard to understand or implement?
+
+*Q5: Have you ever had any issues with compliance—warnings, penalties, or close calls?*
+
+* _If yes:_ Can you tell me what happened?
+* _If no:_ Do you worry about this possibility? Why or why not?
+
+*Q6: How confident do you feel about your understanding of all the requirements?*
+
+* _Probe:_ Where do you go when you have questions?
+* _Probe:_ What would help you feel more confident?
+
+----
+
+*Section 3: Current Solutions & Workarounds (3-4 minutes)*
+
+*Q7: What tools, systems, or people do you currently rely on to manage compliance?*
+
+* _Probe:_ How well do these work for you?
+* _Probe:_ What's missing?
+
+*Q8: Do you work with any external consultants or advisors for CAP reporting?*
+
+* _If yes:_ What do they help with? What does that cost you annually?
+* _Probe:_ Is this cost a burden for your farm?
+
+----
+
+*Section 4: Solution Interest & Willingness to Pay (2-3 minutes)*
+
+*Q9: Imagine there was a digital platform that automatically monitored your compliance with SMR and GAEC requirements and alerted you about potential issues before they became problems. How would something like that fit into your farm?*
+
+* _Probe:_ What would be most valuable to you?
+* _Probe:_ What concerns would you have?
+
+*Q10: If such a platform could save you [X hours per month based on their Q3 answer] and reduce your risk of penalties, what would that be worth to you?*
+
+* _Probe:_ Would you be willing to pay a monthly fee for something like that? What range seems reasonable?
+* _Probe:_ How does that compare to what you currently spend on consultants or your own time?
+
+----
+
+h3. *Closing (1 minute)*
+
+""Thank you so much for sharing your experiences with me. This has been incredibly helpful.
+
+Before we finish—is there anything else about CAP compliance or farm management that we haven't discussed that you think is important for me to understand?
+
+[Listen]
+
+Great. If we have any follow-up questions as we develop this further, would it be okay to reach out to you again?
+
+Thank you again for your time and insights. Best of luck with this season.""
+
+----
+
+h2. *Updated Acceptance Criteria*
+
+✅ Interview guide contains clear, open-ended questions organized by theme
+✅ Opening and closing scripts are prepared and natural-sounding
+✅ Interview can be completed in 20 minutes or less
+✅ Guide allows flexibility for follow-up questions based on responses
+✅ Pilot test completed with at least one farmer
+✅ Interview notes template created for consistent documentation
+✅ Link to interview guide and notes template added in Jira
+
+----
+
+h2. *Definition of Done (DoD)*
+
+✅ Epic connected
+✅ Points for the story given
+✅ All sub-tasks completed
+✅ Acceptance criteria met
+✅ At least 1 pilot interview conducted and documented
+✅ Interview guide reviewed and approved by team
+✅ Notes template tested and refined based on pilot
+✅ Story marked as Done in Jira",,Bilal Ashrafov,712020:72f6c6d8-61d4-42d7-9554-95c2403d3b14,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0003r:,,,SCRUM questions Sprint 1,,,,,,,10088,SCRUM-14,Market Validation – CAP Compliance Interviews,In Progress,04/Mar/26 1:47 PM
+Market Validation – CAP Compliance Interviews,SCRUM-14,10088,Epic,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,27/Feb/26 8:54 AM,27/Feb/26 8:54 AM,,,,0,,"Big Goal: Use structured interviews with farmers to confirm the CAP (SMR/GAEC) compliance issue and find out how much people want a digital compliance monitoring platform.
+
+Scope:Making the questionnaire
+
+Conducting the interview
+
+Analysis of problem validation
+
+Assessment of willingness to pay
+
+Result: Clear proof that the burden of complying with CAP is big enough to warrant the creation of a digital solution.",,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,,,,,,,,,,,,,,,,,,,,,,,,,purple,,,,0|i0003j:,,,,,,,,,,,,,To Do,27/Feb/26 8:54 AM
+Prepare validation summary,SCRUM-13,10055,Subtask,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,25/Feb/26 10:20 PM,25/Feb/26 10:20 PM,,,,0,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0003b:,,,SCRUM questions Sprint 0,,,,,,,10045,SCRUM-8,Prepare for questionnaire for interview of farmers,To Do,25/Feb/26 10:20 PM
+Analyze results,SCRUM-12,10053,Subtask,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,25/Feb/26 10:20 PM,25/Feb/26 10:20 PM,,,,0,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i00033:,,,SCRUM questions Sprint 0,,,,,,,10045,SCRUM-8,Prepare for questionnaire for interview of farmers,To Do,25/Feb/26 10:20 PM
+Conduct interviews,SCRUM-11,10051,Subtask,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,25/Feb/26 10:20 PM,25/Feb/26 10:20 PM,,,,0,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0002v:,,,SCRUM questions Sprint 0,,,,,,,10045,SCRUM-8,Prepare for questionnaire for interview of farmers,To Do,25/Feb/26 10:20 PM
+Identify farmers for interviews,SCRUM-10,10049,Subtask,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,25/Feb/26 10:19 PM,25/Feb/26 10:19 PM,,,,0,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0002n:,,,SCRUM questions Sprint 0,,,,,,,10045,SCRUM-8,Prepare for questionnaire for interview of farmers,To Do,25/Feb/26 10:19 PM
+Create Google Form,SCRUM-9,10047,Subtask,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,25/Feb/26 10:19 PM,25/Feb/26 10:19 PM,04/Mar/26 9:14 AM,,,0,,,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0002f:,,,SCRUM questions Sprint 0,,,,,,,10045,SCRUM-8,Prepare for questionnaire for interview of farmers,To Do,25/Feb/26 10:19 PM
+Prepare for questionnaire for interview of farmers,SCRUM-8,10045,Task,In Review,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,Maksym Sviatnyi,712020:13edebc4-169a-4e06-9eaa-451f0c9d1ca5,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,25/Feb/26 4:27 PM,27/Feb/26 9:01 AM,04/Mar/26 4:00 PM,,,0,,"h3. User Story
+
+As a product team, I want to use structured interviews with farmers to make sure that CAP (SMR/GAEC) compliance pain points are real.
+So we can check the fit between the problem and the solution and see if people are prepared to pay.
+
+1. Farm profile
+
+*What is the size of your farm?*
+
+* Under 10 hectares
+* 10–50 hectares
+* 50–200 hectares
+* Over 200 hectares
+
+h3. 2. Engagement with CAP
+
+*Do you currently receive CAP direct payments?*
+
+* Yes
+* No
+* Planning to apply
+
+h3. 3. Administrative burden
+
+*How many hours per month do you spend on CAP-related documentation and compliance tasks?*
+
+* Less than 5 hours
+* 5–10 hours
+* 10–20 hours
+* More than 20 hours
+
+h3. 4. Perceived complexity
+
+*How would you rate the complexity of SMR and GAEC requirements?*
+
+
+(1 = Very simple, 5 = Extremely complex)
+
+h3. 5. Fear of penalties
+
+*Have you ever received a warning or penalty related to CAP compliance?*
+
+* Yes
+* No
+
+If yes:
+How concerned are you about future penalties? (1–5 scale)
+
+h3. 6. Understanding of regulations
+
+*Do you feel confident that you fully understand all CAP compliance requirements?*
+
+* Yes, completely
+* Partially
+* No
+
+h3. 7. Use of consultants
+
+*Do you use external consultants for CAP reporting?*
+
+* Yes, regularly
+* Occasionally
+* No
+
+If yes:
+Approximately how much do you spend annually on consulting services?
+
+h3. 8. Current tools
+
+*What tools do you currently use to manage compliance?*
+
+* Paper documentation
+* Excel
+* Government portals
+* Specialized software
+* None
+
+h3. 9. Interest in digital solution
+
+*Would you use a digital platform that automatically monitors SMR/GAEC compliance and alerts you about risks?*
+
+* Definitely yes
+* Probably yes
+* Not sure
+* Probably not
+* Definitely not
+
+h3. 10. Willingness to pay
+
+*How much would you be willing to pay monthly for a platform that reduces compliance workload and minimizes penalty risks?*
+
+* €0–10
+* €10–30
+* €30–50
+* More than €50
+
+h3. 11. External Support and Financial Impact
+
+*Do you hire external specialists (e.g., consultants, accountants, compliance advisors) to assist with CAP compliance and reporting?*
+
+* Yes, regularly
+* Occasionally
+* No
+
+If yes:
+How significant is the financial burden of these services for your farm?
+(1 = Not significant at all, 5 = Very significant financial burden)
+
+
+
+h3. Acceptance Criteria
+
+The questionnaire has questions that are clear and well-organized.
+
+The answer choices are clear and well-defined.
+
+A digital version of the Google Form is made.
+
+Pilot test finished (with at least one person answering the test)
+
+Added a link to the form in Jira
+
+Script for the interview (opening and conclusion)
+
+
+
+h3. Definition of Done (DoD)
+
+Epic connected
+
+Points for the story given
+
+All of the smaller jobs are done.
+
+Requirements for acceptance met
+
+The problem is now done.",,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i00027:,,,SCRUM questions Sprint 0,,,5.0,,,,10088,SCRUM-14,Market Validation – CAP Compliance Interviews,In Progress,25/Feb/26 10:20 PM
+"Report. Points 2.3, 2.2 and all 1.*",SCRUM-7,10044,Task,To Do,SCRUM,K608,software,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,Your first project,Medium,,Edvinas Fiodorov,712020:23eef6d5-12da-4c4f-bff8-e65f38e8287b,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,25/Feb/26 4:26 PM,25/Feb/26 4:36 PM,04/Mar/26 9:09 AM,,,0,,,,The V,712020:f14fa11e-5d60-4d0e-822f-5f18b8a6cfa0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0|i0001z:,,,SCRUM questions Sprint 0,,,,,,,,,,To Do,25/Feb/26 4:26 PM
