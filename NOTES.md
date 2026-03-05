@@ -18,3 +18,9 @@
 - `SCRUM-34` -> `SCRUM-26` (Offline Draft and Sync)
 - `SCRUM-35` -> `SCRUM-27` (Deadline Reminders and Notifications)
 - `SCRUM-36` -> `SCRUM-28` (Audit Logging and Traceability)
+
+## Recurrent Product Facts (Mar 2026)
+
+- The product target is EU CAP compliance support for farmers (SMR/GAEC), with Lithuania as an initial pilot context.
+- Core MVP workflow repeats across artifacts: secure login, farm profile capture, personalized task list with plain-language guidance, basic report submission, offline draft + sync, deadline reminders, and audit logging.
+- Primary user value repeats across artifacts: reduce compliance admin burden, avoid missed deadlines/penalties, and improve access to subsidy-related actions.
