@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
@@ -13,8 +13,10 @@ import { FarmProfile } from "@/types";
 
 type Errors = Partial<Record<keyof FarmProfile, string>>;
 
+const REMINDER_OPTIONS = [1, 3, 7, 14];
+
 export default function ProfileScreen() {
-  const { farmProfile, saveProfile, syncProfile } = useApp();
+  const { farmProfile, saveProfile, syncProfile, remindersEnabled, reminderDaysBefore, setReminders } = useApp();
   const [form, setForm] = useState(farmProfile);
   const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState("");
@@ -163,6 +165,56 @@ export default function ProfileScreen() {
           </AppText>
         </View>
       ) : null}
+
+      {/* SCRUM-35 — Deadline Reminder Notifications */}
+      <Card>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="notifications-outline" size={16} color="#3f6a52" />
+          <AppText variant="label" tone="accent">Reminder Notifications</AppText>
+        </View>
+
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleLabel}>
+            <AppText style={styles.toggleTitle}>Deadline reminders</AppText>
+            <AppText variant="caption" tone="muted">
+              Get notified before compliance tasks are due.
+            </AppText>
+          </View>
+          <Pressable
+            style={[styles.toggle, remindersEnabled && styles.toggleOn]}
+            onPress={() => setReminders(!remindersEnabled, reminderDaysBefore)}
+          >
+            <View style={[styles.toggleThumb, remindersEnabled && styles.toggleThumbOn]} />
+          </Pressable>
+        </View>
+
+        {remindersEnabled && (
+          <>
+            <AppText variant="label" tone="muted">Remind me this many days before deadline</AppText>
+            <View style={styles.reminderDaysRow}>
+              {REMINDER_OPTIONS.map((days) => (
+                <Pressable
+                  key={days}
+                  style={[styles.daysOption, reminderDaysBefore === days && styles.daysOptionActive]}
+                  onPress={() => setReminders(remindersEnabled, days)}
+                >
+                  <AppText
+                    style={[styles.daysOptionText, reminderDaysBefore === days && styles.daysOptionTextActive]}
+                  >
+                    {days}d
+                  </AppText>
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.reminderPreview}>
+              <Ionicons name="information-circle-outline" size={14} color="#3f6a52" />
+              <AppText variant="caption" tone="accent">
+                You will be reminded {reminderDaysBefore} day{reminderDaysBefore !== 1 ? "s" : ""} before each deadline.
+              </AppText>
+            </View>
+          </>
+        )}
+      </Card>
     </Screen>
   );
 }
@@ -201,5 +253,65 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     justifyContent: "center",
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  toggleLabel: { flex: 1, gap: 2 },
+  toggleTitle: { fontWeight: "600", fontSize: 15 },
+  toggle: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#ddd3be",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  toggleOn: { backgroundColor: "#3f6a52" },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#fff",
+    alignSelf: "flex-start",
+  },
+  toggleThumbOn: { alignSelf: "flex-end" },
+  reminderDaysRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  daysOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#ddd3be",
+    backgroundColor: "#faf8f3",
+    alignItems: "center",
+  },
+  daysOptionActive: {
+    borderColor: "#3f6a52",
+    backgroundColor: "#e6efe9",
+  },
+  daysOptionText: {
+    fontWeight: "600",
+    fontSize: 13,
+    color: "#7a7062",
+  },
+  daysOptionTextActive: {
+    color: "#2d5740",
+    fontWeight: "700",
+  },
+  reminderPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#e6efe9",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
 });

@@ -31,9 +31,13 @@ export const SEEDED_REPORTS: ComplianceReport[] = [
   },
 ];
 
+export const INITIAL_REMINDER_DAYS = 7;
+
 export const INITIAL_STATE: AppState = {
   sessionUser: null,
   farmProfile: EMPTY_PROFILE,
   reports: SEEDED_REPORTS,
   auditLogs: [],
+  remindersEnabled: true,
+  reminderDaysBefore: INITIAL_REMINDER_DAYS,
 };

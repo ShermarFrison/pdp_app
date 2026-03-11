@@ -16,13 +16,18 @@ export type FarmProfile = {
 
 export type TaskStatus = "Not started" | "In progress" | "Overdue" | "Done";
 
+export type RiskLevel = "low" | "medium" | "high";
+
 export type ComplianceTask = {
   id: string;
   title: string;
   guidance: string;
+  whatToDo: string;
   dueDate: string;
   status: TaskStatus;
   source: string;
+  riskLevel: RiskLevel;
+  penaltyExplanation: string;
 };
 
 export type ReportStatus = "draft" | "submitted";
@@ -61,4 +66,6 @@ export type AppState = {
   farmProfile: FarmProfile;
   reports: ComplianceReport[];
   auditLogs: AuditLogEntry[];
+  remindersEnabled: boolean;
+  reminderDaysBefore: number;
 };

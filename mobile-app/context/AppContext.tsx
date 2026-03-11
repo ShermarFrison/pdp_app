@@ -3,6 +3,7 @@ import { createContext, PropsWithChildren, useContext, useEffect, useState } fro
 import { DEFAULT_PASSWORD, DEFAULT_USER, EMPTY_PROFILE, SEEDED_REPORTS } from "@/data/seed";
 import { loadState, saveState } from "@/lib/storage";
 import { AppState, AuditEventType, ComplianceReport, FarmProfile, User } from "@/types";
+import { INITIAL_REMINDER_DAYS } from "@/data/seed";
 
 type LoginResult = {
   ok: boolean;
@@ -15,6 +16,9 @@ type AppContextValue = {
   farmProfile: FarmProfile;
   reports: ComplianceReport[];
   auditLogs: AppState["auditLogs"];
+  remindersEnabled: boolean;
+  reminderDaysBefore: number;
+  setReminders: (enabled: boolean, daysBefore: number) => void;
   login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
   saveProfile: (profile: FarmProfile) => Promise<void>;
@@ -35,6 +39,8 @@ export function AppProvider({ children }: PropsWithChildren) {
     farmProfile: EMPTY_PROFILE,
     reports: SEEDED_REPORTS,
     auditLogs: [],
+    remindersEnabled: true,
+    reminderDaysBefore: INITIAL_REMINDER_DAYS,
   });
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -147,6 +153,14 @@ export function AppProvider({ children }: PropsWithChildren) {
     return duplicated;
   }
 
+  function setReminders(enabled: boolean, daysBefore: number) {
+    setState((current) => ({
+      ...current,
+      remindersEnabled: enabled,
+      reminderDaysBefore: daysBefore,
+    }));
+  }
+
   async function submitReport(reportId: string, updates: Partial<ComplianceReport>) {
     const existing = state.reports.find((report) => report.id === reportId);
 
@@ -189,6 +203,9 @@ export function AppProvider({ children }: PropsWithChildren) {
         farmProfile: state.farmProfile,
         reports: state.reports,
         auditLogs: state.auditLogs,
+        remindersEnabled: state.remindersEnabled,
+        reminderDaysBefore: state.reminderDaysBefore,
+        setReminders,
         login,
         logout,
         saveProfile,

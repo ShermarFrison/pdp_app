@@ -1,25 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, usePathname, useRouter } from "expo-router";
+import { Redirect } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/AppText";
 import { useApp } from "@/context/AppContext";
 
-/* ---- lazy-loaded screens ---- */
 import DashboardScreen from "./index";
 import ProfileScreen from "./profile";
 import ReportsScreen from "./reports";
 import AuditLogScreen from "./audit-log";
+import CalendarScreen from "./calendar";
 
 const TAB_ITEMS = [
   { key: "dashboard", title: "Dashboard", icon: "grid-outline" as const, iconActive: "grid" as const },
-  { key: "profile", title: "Profile", icon: "leaf-outline" as const, iconActive: "leaf" as const },
+  { key: "calendar", title: "Calendar", icon: "calendar-outline" as const, iconActive: "calendar" as const },
   { key: "reports", title: "Reports", icon: "document-text-outline" as const, iconActive: "document-text" as const },
+  { key: "profile", title: "Profile", icon: "leaf-outline" as const, iconActive: "leaf" as const },
   { key: "audit", title: "Audit", icon: "shield-checkmark-outline" as const, iconActive: "shield-checkmark" as const },
 ];
-
-import { useState } from "react";
 
 export default function TabLayout() {
   const { sessionUser } = useApp();
@@ -32,7 +32,7 @@ export default function TabLayout() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* ---- TOP TAB BAR ---- */}
+      {/* TOP TAB BAR */}
       <View style={styles.topBar}>
         {TAB_ITEMS.map((tab) => {
           const active = activeTab === tab.key;
@@ -44,7 +44,7 @@ export default function TabLayout() {
             >
               <Ionicons
                 name={active ? tab.iconActive : tab.icon}
-                size={18}
+                size={17}
                 color={active ? "#3f6a52" : "#a09786"}
               />
               <AppText style={[styles.tabLabel, active && styles.tabLabelActive]}>
@@ -55,11 +55,12 @@ export default function TabLayout() {
         })}
       </View>
 
-      {/* ---- SCREEN CONTENT ---- */}
+      {/* SCREEN CONTENT */}
       <View style={styles.content}>
         {activeTab === "dashboard" && <DashboardScreen />}
-        {activeTab === "profile" && <ProfileScreen />}
+        {activeTab === "calendar" && <CalendarScreen />}
         {activeTab === "reports" && <ReportsScreen />}
+        {activeTab === "profile" && <ProfileScreen />}
         {activeTab === "audit" && <AuditLogScreen />}
       </View>
     </View>
@@ -76,25 +77,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#fffdf8",
     borderBottomWidth: 1,
     borderBottomColor: "#e8e0cf",
-    paddingBottom: 8,
-    paddingTop: 8,
-    paddingHorizontal: 6,
-    gap: 4,
+    paddingBottom: 6,
+    paddingTop: 6,
+    paddingHorizontal: 4,
+    gap: 2,
   },
   tabItem: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
-    paddingVertical: 9,
+    gap: 2,
+    paddingVertical: 6,
     borderRadius: 10,
   },
   tabItemActive: {
     backgroundColor: "#e6efe9",
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: "600",
     color: "#a09786",
   },
