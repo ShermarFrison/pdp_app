@@ -5,7 +5,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function Screen({ children }: PropsWithChildren) {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.inner}>{children}</View>
       </ScrollView>
     </SafeAreaView>
@@ -15,13 +18,14 @@ export function Screen({ children }: PropsWithChildren) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f3efe5",
+    backgroundColor: "#f4f0e6",
   },
   content: {
     flexGrow: 1,
   },
   inner: {
     padding: 20,
-    gap: 16,
+    paddingBottom: 32,
+    gap: 20,
   },
 });

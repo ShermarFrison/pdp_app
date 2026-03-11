@@ -13,7 +13,7 @@ function RootNavigator() {
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f3efe5",
+          backgroundColor: "#f4f0e6",
         }}
       >
         <ActivityIndicator size="large" color="#3f6a52" />

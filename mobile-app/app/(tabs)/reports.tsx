@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
+import { Badge } from "@/components/Badge";
 import { Card } from "@/components/Card";
+import { Divider } from "@/components/Divider";
 import { Field } from "@/components/Field";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
@@ -48,7 +51,7 @@ export default function ReportsScreen() {
       fieldSummary: duplicated.fieldSummary,
       notes: duplicated.notes,
     });
-    setMessage("Previous report duplicated into a new draft. Set the current-cycle fields and submit.");
+    setMessage("Report duplicated into a new draft. Update the fields and submit.");
   }
 
   async function handleSubmit() {
@@ -67,40 +70,81 @@ export default function ReportsScreen() {
     setMessage("Report submitted successfully and moved into history.");
   }
 
+  const isSuccess = message.includes("successfully");
+  const isError = message.includes("failed") || message.includes("Could not") || message.includes("required");
+
   return (
     <Screen>
-      <View style={{ gap: 8 }}>
+      <View style={styles.header}>
         <AppText variant="title">Reports</AppText>
         <AppText tone="muted">
-          Duplicate the last submitted report, reset current-cycle fields, then follow the normal validation path to submit.
+          Duplicate a previous report, update for the current cycle, then submit.
         </AppText>
       </View>
 
       <Card>
-        <AppText variant="subtitle">Previous Submitted Reports</AppText>
-        {submittedReports.map((report) => (
-          <View key={report.id} style={styles.reportRow}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <AppText>{report.title}</AppText>
-              <AppText variant="caption" tone="muted">
-                Cycle {report.periodYear} • Submitted {report.submittedAt?.slice(0, 10)}
-              </AppText>
-            </View>
-            <PrimaryButton label="Duplicate" variant="secondary" onPress={() => handleDuplicate(report.id)} />
+        <View style={styles.sectionHeader}>
+          <Ionicons name="archive-outline" size={16} color="#3f6a52" />
+          <AppText variant="subtitle">Submitted Reports</AppText>
+        </View>
+
+        {submittedReports.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-outline" size={24} color="#c4b79b" />
+            <AppText variant="caption" tone="muted">No submitted reports yet.</AppText>
           </View>
-        ))}
+        ) : (
+          submittedReports.map((report, index) => (
+            <View key={report.id}>
+              {index > 0 && <Divider />}
+              <View style={styles.reportItem}>
+                <View style={styles.reportTopRow}>
+                  <AppText style={styles.reportTitle}>{report.title}</AppText>
+                  <Badge label={report.periodYear} color="green" />
+                </View>
+                <View style={styles.reportMeta}>
+                  <Ionicons name="checkmark-circle" size={13} color="#1f7a3f" />
+                  <AppText variant="caption" tone="success">
+                    Submitted {report.submittedAt?.slice(0, 10)}
+                  </AppText>
+                  <AppText variant="caption" tone="muted">{report.scheme}</AppText>
+                </View>
+                <PrimaryButton
+                  label="Duplicate as New Draft"
+                  variant="secondary"
+                  compact
+                  onPress={() => handleDuplicate(report.id)}
+                />
+              </View>
+            </View>
+          ))
+        )}
       </Card>
 
-      <Card>
-        <AppText variant="subtitle">Editable Draft</AppText>
+      <Card variant={draft ? "elevated" : "default"}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="create-outline" size={16} color={draft ? "#3f6a52" : "#a09786"} />
+          <AppText variant="subtitle">
+            {draft ? "Edit Draft" : "No Draft"}
+          </AppText>
+          {draft && <Badge label="Draft" color="amber" />}
+        </View>
+
         {draft ? (
           <>
-            <AppText variant="caption" tone="muted">
-              Based on report {draft.basedOnReportId}. Inspection date is intentionally reset for the current cycle.
-            </AppText>
+            {draft.basedOnReportId ? (
+              <View style={styles.basedOn}>
+                <Ionicons name="git-branch-outline" size={13} color="#a09786" />
+                <AppText variant="caption" tone="muted">
+                  Based on {draft.basedOnReportId}
+                </AppText>
+              </View>
+            ) : null}
+
             <Field
               label="Period Year"
               value={draftForm.periodYear}
+              keyboardType="numeric"
               onChangeText={(value) => setDraftForm((current) => ({ ...current, periodYear: value }))}
             />
             <Field
@@ -113,37 +157,123 @@ export default function ReportsScreen() {
               label="Field Summary"
               value={draftForm.fieldSummary}
               multiline
+              placeholder="Describe field conditions and compliance status..."
               onChangeText={(value) => setDraftForm((current) => ({ ...current, fieldSummary: value }))}
-              style={{ minHeight: 90, textAlignVertical: "top" }}
             />
             <Field
               label="Notes"
               value={draftForm.notes}
               multiline
+              placeholder="Additional observations..."
               onChangeText={(value) => setDraftForm((current) => ({ ...current, notes: value }))}
-              style={{ minHeight: 90, textAlignVertical: "top" }}
             />
-            <PrimaryButton label="Submit Draft" onPress={handleSubmit} />
+
+            <PrimaryButton label="Submit Report" onPress={handleSubmit} />
           </>
         ) : (
-          <AppText tone="muted">
-            No draft yet. Duplicate a previous report to start this cycle&apos;s submission.
-          </AppText>
+          <View style={styles.emptyState}>
+            <Ionicons name="copy-outline" size={24} color="#c4b79b" />
+            <AppText variant="caption" tone="muted" style={styles.emptyText}>
+              Duplicate a submitted report above to start a new draft for the current cycle.
+            </AppText>
+          </View>
         )}
-        {message ? (
-          <AppText variant="caption" tone={message.includes("successfully") ? "success" : "muted"}>
+      </Card>
+
+      {message ? (
+        <View
+          style={[
+            styles.messageBar,
+            isSuccess ? styles.messageSuccess : isError ? styles.messageError : styles.messageInfo,
+          ]}
+        >
+          <Ionicons
+            name={isSuccess ? "checkmark-circle" : isError ? "alert-circle" : "information-circle"}
+            size={16}
+            color={isSuccess ? "#1f7a3f" : isError ? "#b5332a" : "#3f6a52"}
+          />
+          <AppText
+            variant="caption"
+            tone={isSuccess ? "success" : isError ? "danger" : "accent"}
+            style={styles.messageText}
+          >
             {message}
           </AppText>
-        ) : null}
-      </Card>
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  reportRow: {
+  header: {
+    gap: 6,
+  },
+  sectionHeader: {
     flexDirection: "row",
-    gap: 12,
     alignItems: "center",
+    gap: 8,
+  },
+  emptyState: {
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 14,
+  },
+  emptyText: {
+    textAlign: "center",
+  },
+  reportItem: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  reportTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  reportTitle: {
+    fontWeight: "600",
+    fontSize: 15,
+    flex: 1,
+  },
+  reportMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  basedOn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f4f0e6",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  messageBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  messageSuccess: {
+    backgroundColor: "#e3f3e8",
+    borderColor: "#b2dbc2",
+  },
+  messageError: {
+    backgroundColor: "#fdf0ef",
+    borderColor: "#f0c4c0",
+  },
+  messageInfo: {
+    backgroundColor: "#e6efe9",
+    borderColor: "#c5d9cc",
+  },
+  messageText: {
+    flex: 1,
   },
 });

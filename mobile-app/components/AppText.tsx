@@ -6,7 +6,7 @@ type Variant = "title" | "subtitle" | "body" | "label" | "caption";
 type AppTextProps = TextProps &
   PropsWithChildren<{
     variant?: Variant;
-    tone?: "default" | "muted" | "danger" | "success";
+    tone?: "default" | "muted" | "danger" | "success" | "accent";
   }>;
 
 export function AppText({ children, variant = "body", tone = "default", style, ...props }: AppTextProps) {
@@ -18,6 +18,7 @@ export function AppText({ children, variant = "body", tone = "default", style, .
         tone === "muted" && styles.muted,
         tone === "danger" && styles.danger,
         tone === "success" && styles.success,
+        tone === "accent" && styles.accent,
         style,
       ]}
       {...props}
@@ -29,37 +30,44 @@ export function AppText({ children, variant = "body", tone = "default", style, .
 
 const styles = StyleSheet.create({
   base: {
-    color: "#1d1a12",
+    color: "#2c2517",
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
   subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+    lineHeight: 23,
   },
   body: {
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 22,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   caption: {
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
   },
   muted: {
-    color: "#675f53",
+    color: "#7a7062",
   },
   danger: {
-    color: "#a5372f",
+    color: "#b5332a",
   },
   success: {
-    color: "#236b3e",
+    color: "#1f7a3f",
+  },
+  accent: {
+    color: "#3f6a52",
   },
 });
