@@ -13,10 +13,20 @@ import { FarmProfile } from "@/types";
 
 type Errors = Partial<Record<keyof FarmProfile, string>>;
 
-const REMINDER_OPTIONS = [1, 3, 7, 14];
+const ALL_OFFSET_OPTIONS = [1, 3, 7, 14];
 
 export default function ProfileScreen() {
-  const { farmProfile, saveProfile, syncProfile, remindersEnabled, reminderDaysBefore, setReminders } = useApp();
+  const {
+    farmProfile,
+    saveProfile,
+    syncProfile,
+    remindersEnabled,
+    reminderDaysBefore,
+    reminderOffsets,
+    setReminders,
+    setReminderOffsets,
+  } = useApp();
+
   const [form, setForm] = useState(farmProfile);
   const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState("");
@@ -63,7 +73,36 @@ export default function ProfileScreen() {
     setMessage("Profile synced to the mocked backend.");
   }
 
+  // SCRUM-48: Toggle an offset in the multi-select
+  function toggleOffset(days: number) {
+    const current = reminderOffsets;
+    const next = current.includes(days)
+      ? current.filter((d) => d !== days)
+      : [...current, days];
+
+    // Must have at least one offset selected when reminders are enabled
+    if (next.length === 0) return;
+
+    setReminderOffsets(next);
+    // Also update the legacy single value to the closest offset
+    setReminders(remindersEnabled, Math.min(...next));
+  }
+
+  // SCRUM-48: Disable reminders completely
+  function handleToggleReminders() {
+    const newEnabled = !remindersEnabled;
+    setReminders(newEnabled, reminderDaysBefore);
+
+    if (!newEnabled) {
+      // Immediately stop — offsets are preserved but inactive
+    }
+  }
+
   const isError = message.includes("Fix") || message.includes("Complete");
+
+  // Build preview text for SCRUM-48
+  const sortedOffsets = [...reminderOffsets].sort((a, b) => b - a);
+  const offsetPreview = sortedOffsets.map((d) => `${d} day${d !== 1 ? "s" : ""}`).join(", ");
 
   return (
     <Screen>
@@ -166,11 +205,11 @@ export default function ProfileScreen() {
         </View>
       ) : null}
 
-      {/* SCRUM-35 — Deadline Reminder Notifications */}
+      {/* SCRUM-48 — Configurable Reminder Schedule */}
       <Card>
         <View style={styles.sectionHeader}>
           <Ionicons name="notifications-outline" size={16} color="#3f6a52" />
-          <AppText variant="label" tone="accent">Reminder Notifications</AppText>
+          <AppText variant="label" tone="accent">Reminder Schedule</AppText>
         </View>
 
         <View style={styles.toggleRow}>
@@ -182,7 +221,7 @@ export default function ProfileScreen() {
           </View>
           <Pressable
             style={[styles.toggle, remindersEnabled && styles.toggleOn]}
-            onPress={() => setReminders(!remindersEnabled, reminderDaysBefore)}
+            onPress={handleToggleReminders}
           >
             <View style={[styles.toggleThumb, remindersEnabled && styles.toggleThumbOn]} />
           </Pressable>
@@ -190,29 +229,46 @@ export default function ProfileScreen() {
 
         {remindersEnabled && (
           <>
-            <AppText variant="label" tone="muted">Remind me this many days before deadline</AppText>
+            <AppText variant="label" tone="muted">
+              Remind me this many days before deadline (select multiple)
+            </AppText>
             <View style={styles.reminderDaysRow}>
-              {REMINDER_OPTIONS.map((days) => (
-                <Pressable
-                  key={days}
-                  style={[styles.daysOption, reminderDaysBefore === days && styles.daysOptionActive]}
-                  onPress={() => setReminders(remindersEnabled, days)}
-                >
-                  <AppText
-                    style={[styles.daysOptionText, reminderDaysBefore === days && styles.daysOptionTextActive]}
+              {ALL_OFFSET_OPTIONS.map((days) => {
+                const active = reminderOffsets.includes(days);
+                return (
+                  <Pressable
+                    key={days}
+                    style={[styles.daysOption, active && styles.daysOptionActive]}
+                    onPress={() => toggleOffset(days)}
                   >
-                    {days}d
-                  </AppText>
-                </Pressable>
-              ))}
+                    <AppText
+                      style={[styles.daysOptionText, active && styles.daysOptionTextActive]}
+                    >
+                      {days}d
+                    </AppText>
+                    {active && (
+                      <Ionicons name="checkmark" size={12} color="#2d5740" />
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
             <View style={styles.reminderPreview}>
               <Ionicons name="information-circle-outline" size={14} color="#3f6a52" />
               <AppText variant="caption" tone="accent">
-                You will be reminded {reminderDaysBefore} day{reminderDaysBefore !== 1 ? "s" : ""} before each deadline.
+                You will be reminded at: {offsetPreview} before each deadline.
               </AppText>
             </View>
           </>
+        )}
+
+        {!remindersEnabled && (
+          <View style={styles.disabledNotice}>
+            <Ionicons name="notifications-off-outline" size={14} color="#a09786" />
+            <AppText variant="caption" tone="muted">
+              Reminders are disabled. No notifications will be sent.
+            </AppText>
+          </View>
         )}
       </Card>
     </Screen>
@@ -291,6 +347,9 @@ const styles = StyleSheet.create({
     borderColor: "#ddd3be",
     backgroundColor: "#faf8f3",
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 4,
   },
   daysOptionActive: {
     borderColor: "#3f6a52",
@@ -310,6 +369,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     backgroundColor: "#e6efe9",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  disabledNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f4f0e6",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,

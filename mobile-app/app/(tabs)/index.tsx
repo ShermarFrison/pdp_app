@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
@@ -35,19 +35,61 @@ const riskLabel: Record<RiskLevel, string> = {
 type FilterTab = "All" | "Overdue" | "Not started" | "Done";
 const FILTER_TABS: FilterTab[] = ["All", "Overdue", "Not started", "Done"];
 
+// Simulated file picker for evidence uploads (SCRUM-37)
+function simulateFilePick(): Promise<{ uri: string; fileName: string; type: "photo" | "pdf"; sizeBytes: number } | null> {
+  return new Promise((resolve) => {
+    // Simulate picking a file with random attributes
+    const isPhoto = Math.random() > 0.3;
+    const sizeBytes = Math.floor(Math.random() * 5 * 1024 * 1024) + 100000; // 100KB - 5MB
+    resolve({
+      uri: `file:///mock/${Date.now()}.${isPhoto ? "jpg" : "pdf"}`,
+      fileName: isPhoto ? `evidence_photo_${Date.now()}.jpg` : `compliance_doc_${Date.now()}.pdf`,
+      type: isPhoto ? "photo" : "pdf",
+      sizeBytes,
+    });
+  });
+}
+
 export default function DashboardScreen() {
-  const { sessionUser, farmProfile, logout, reports } = useApp();
+  const { sessionUser, farmProfile, logout, reports, addEvidence, removeEvidence, getEvidenceForTask } = useApp();
   const tasks = deriveTasks(farmProfile);
   const draftCount = reports.filter((r) => r.status === "draft").length;
   const overdueTasks = tasks.filter((t) => t.status === "Overdue").length;
   const [filter, setFilter] = useState<FilterTab>("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<Record<string, string>>({});
 
   const filtered = filter === "All" ? tasks : tasks.filter((t) => t.status === filter);
 
   async function handleLogout() {
     await logout();
     router.replace("/login");
+  }
+
+  // SCRUM-37: Handle evidence upload
+  async function handleUploadEvidence(taskId: string) {
+    try {
+      const file = await simulateFilePick();
+      if (!file) {
+        setUploadMessage((prev) => ({ ...prev, [taskId]: "File selection cancelled." }));
+        return;
+      }
+
+      const result = await addEvidence(taskId, file.uri, file.fileName, file.type, file.sizeBytes);
+      if (!result.ok) {
+        setUploadMessage((prev) => ({ ...prev, [taskId]: result.error ?? "Upload failed." }));
+      } else {
+        setUploadMessage((prev) => ({ ...prev, [taskId]: `Uploaded "${file.fileName}" successfully.` }));
+      }
+    } catch {
+      setUploadMessage((prev) => ({ ...prev, [taskId]: "Upload failed. Please try again." }));
+    }
+  }
+
+  // SCRUM-37: Handle evidence removal
+  async function handleRemoveEvidence(evidenceId: string, taskId: string) {
+    await removeEvidence(evidenceId);
+    setUploadMessage((prev) => ({ ...prev, [taskId]: "Attachment removed." }));
   }
 
   return (
@@ -117,6 +159,11 @@ export default function DashboardScreen() {
         ) : (
           filtered.map((task, index) => {
             const expanded = expandedId === task.id;
+            const evidence = getEvidenceForTask(task.id);
+            const taskMsg = uploadMessage[task.id];
+            const isMsgSuccess = taskMsg?.includes("successfully") || taskMsg?.includes("removed");
+            const isMsgError = taskMsg?.includes("failed") || taskMsg?.includes("exceeds");
+
             return (
               <View key={task.id}>
                 {index > 0 && <Divider />}
@@ -137,6 +184,12 @@ export default function DashboardScreen() {
                     <Ionicons name="calendar-outline" size={13} color="#a09786" />
                     <AppText variant="caption" tone="muted">Due {task.dueDate}</AppText>
                     <AppText variant="caption" tone="muted">{task.source}</AppText>
+                    {evidence.length > 0 && (
+                      <>
+                        <Ionicons name="attach" size={13} color="#3f6a52" />
+                        <AppText variant="caption" tone="accent">{evidence.length}</AppText>
+                      </>
+                    )}
                     <Ionicons
                       name={expanded ? "chevron-up" : "chevron-down"}
                       size={13}
@@ -176,6 +229,64 @@ export default function DashboardScreen() {
                           {task.penaltyExplanation}
                         </AppText>
                       </View>
+
+                      {/* SCRUM-37: Evidence Attachments */}
+                      <View style={styles.detailSection}>
+                        <View style={styles.detailSectionHeader}>
+                          <Ionicons name="attach" size={14} color="#3f6a52" />
+                          <AppText variant="label" tone="accent">Evidence Files</AppText>
+                        </View>
+
+                        {evidence.length === 0 ? (
+                          <AppText variant="caption" tone="muted">
+                            No files attached yet. Upload photo or PDF evidence.
+                          </AppText>
+                        ) : (
+                          evidence.map((att) => (
+                            <View key={att.id} style={styles.attachmentRow}>
+                              <Ionicons
+                                name={att.type === "photo" ? "image-outline" : "document-outline"}
+                                size={16}
+                                color="#3f6a52"
+                              />
+                              <View style={styles.attachmentInfo}>
+                                <AppText variant="caption" style={styles.attachmentName}>
+                                  {att.fileName}
+                                </AppText>
+                                <AppText variant="caption" tone="muted">
+                                  {(att.sizeBytes / 1024).toFixed(0)} KB — {att.addedAt.slice(0, 10)}
+                                </AppText>
+                              </View>
+                              <Pressable
+                                onPress={() => handleRemoveEvidence(att.id, task.id)}
+                                style={styles.removeBtn}
+                              >
+                                <Ionicons name="trash-outline" size={14} color="#b5332a" />
+                              </Pressable>
+                            </View>
+                          ))
+                        )}
+
+                        <PrimaryButton
+                          label="Upload Photo / PDF"
+                          variant="secondary"
+                          compact
+                          onPress={() => handleUploadEvidence(task.id)}
+                        />
+
+                        {taskMsg ? (
+                          <View style={[styles.uploadMsg, isMsgError && styles.uploadMsgError]}>
+                            <Ionicons
+                              name={isMsgError ? "alert-circle" : "checkmark-circle"}
+                              size={13}
+                              color={isMsgError ? "#b5332a" : "#1f7a3f"}
+                            />
+                            <AppText variant="caption" tone={isMsgError ? "danger" : "success"}>
+                              {taskMsg}
+                            </AppText>
+                          </View>
+                        ) : null}
+                      </View>
                     </View>
                   )}
                 </Pressable>
@@ -187,7 +298,7 @@ export default function DashboardScreen() {
 
       <Card variant="outlined">
         <AppText variant="caption" tone="muted" style={styles.sessionNote}>
-          Tap a task to see plain-language guidance and penalty risk.
+          Tap a task to see plain-language guidance, penalty risk, and upload evidence.
         </AppText>
       </Card>
 
@@ -294,6 +405,40 @@ const styles = StyleSheet.create({
   penaltyText: {
     lineHeight: 20,
     color: "#6b4f18",
+  },
+  // SCRUM-37: Evidence styles
+  attachmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fffdf8",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e8e0cf",
+  },
+  attachmentInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  attachmentName: {
+    fontWeight: "600",
+    color: "#2c2517",
+  },
+  removeBtn: {
+    padding: 6,
+  },
+  uploadMsg: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  uploadMsgError: {
+    backgroundColor: "#fdf0ef",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   sessionNote: { textAlign: "center" },
 });

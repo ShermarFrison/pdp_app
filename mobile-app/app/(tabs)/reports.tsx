@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
@@ -12,7 +12,18 @@ import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
 
 export default function ReportsScreen() {
-  const { reports, duplicateReport, submitReport } = useApp();
+  const {
+    reports,
+    duplicateReport,
+    submitReport,
+    createNewReport,
+    saveDraftOffline,
+    syncReports,
+    syncQueue,
+    isOnline,
+    setOnlineStatus,
+  } = useApp();
+
   const submittedReports = useMemo(
     () => reports.filter((report) => report.status === "submitted"),
     [reports],
@@ -37,6 +48,17 @@ export default function ReportsScreen() {
     }
   }, [draft]);
 
+  // SCRUM-34: Auto-sync when coming back online
+  useEffect(() => {
+    if (isOnline && syncQueue.length > 0) {
+      syncReports().then(({ synced, failed }) => {
+        if (synced > 0) {
+          setMessage(`Auto-synced ${synced} queued report(s).${failed > 0 ? ` ${failed} failed.` : ""}`);
+        }
+      });
+    }
+  }, [isOnline]);
+
   async function handleDuplicate(reportId: string) {
     const duplicated = await duplicateReport(reportId);
 
@@ -54,6 +76,34 @@ export default function ReportsScreen() {
     setMessage("Report duplicated into a new draft. Update the fields and submit.");
   }
 
+  // SCRUM-33: Create new blank report
+  async function handleNewReport() {
+    if (draft) {
+      setMessage("You already have an active draft. Submit or discard it first.");
+      return;
+    }
+
+    const newReport = await createNewReport();
+    setDraftForm({
+      periodYear: newReport.periodYear,
+      inspectionDate: newReport.inspectionDate,
+      fieldSummary: newReport.fieldSummary,
+      notes: newReport.notes,
+    });
+    setMessage("New blank report created. Fill in the fields and submit.");
+  }
+
+  // SCRUM-34: Save draft offline
+  async function handleSaveDraft() {
+    if (!draft) {
+      setMessage("No active draft to save.");
+      return;
+    }
+
+    await saveDraftOffline(draft.id, draftForm);
+    setMessage("Draft saved locally. You can reopen it later or submit when ready.");
+  }
+
   async function handleSubmit() {
     if (!draft) {
       setMessage("Create a draft from a previous report first.");
@@ -67,20 +117,73 @@ export default function ReportsScreen() {
       return;
     }
 
-    setMessage("Report submitted successfully and moved into history.");
+    if (!isOnline) {
+      setMessage("You are offline. Report queued for submission — it will sync automatically when you reconnect.");
+    } else {
+      setMessage("Report submitted successfully and moved into history.");
+    }
   }
 
-  const isSuccess = message.includes("successfully");
-  const isError = message.includes("failed") || message.includes("Could not") || message.includes("required");
+  // SCRUM-34: Manual sync
+  async function handleSync() {
+    if (syncQueue.length === 0) {
+      setMessage("Nothing to sync — all reports are up to date.");
+      return;
+    }
+
+    const { synced, failed } = await syncReports();
+    setMessage(`Synced ${synced} report(s).${failed > 0 ? ` ${failed} failed.` : ""}`);
+  }
+
+  const isSuccess = message.includes("successfully") || message.includes("synced") || message.includes("Auto-synced") || message.includes("saved locally");
+  const isError = message.includes("failed") || message.includes("Could not") || message.includes("required") || message.includes("already have");
+  const isQueued = message.includes("queued");
 
   return (
     <Screen>
       <View style={styles.header}>
         <AppText variant="title">Reports</AppText>
         <AppText tone="muted">
-          Duplicate a previous report, update for the current cycle, then submit.
+          Create, edit, and submit compliance reports.
         </AppText>
       </View>
+
+      {/* SCRUM-34: Online/Offline indicator */}
+      <Card variant="outlined">
+        <View style={styles.connectivityRow}>
+          <View style={styles.connectivityInfo}>
+            <View style={[styles.statusDot, isOnline ? styles.dotOnline : styles.dotOffline]} />
+            <AppText variant="caption" tone={isOnline ? "success" : "danger"}>
+              {isOnline ? "Online" : "Offline — drafts saved locally"}
+            </AppText>
+          </View>
+          <Pressable onPress={() => setOnlineStatus(!isOnline)}>
+            <AppText variant="caption" tone="accent" style={styles.toggleLink}>
+              {isOnline ? "Simulate Offline" : "Go Online"}
+            </AppText>
+          </Pressable>
+        </View>
+        {syncQueue.length > 0 && (
+          <View style={styles.syncQueueInfo}>
+            <Ionicons name="cloud-upload-outline" size={14} color="#8a6514" />
+            <AppText variant="caption" style={{ color: "#8a6514" }}>
+              {syncQueue.length} action(s) queued for sync
+            </AppText>
+            {isOnline && (
+              <Pressable onPress={handleSync}>
+                <AppText variant="caption" tone="accent" style={styles.toggleLink}>Sync Now</AppText>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </Card>
+
+      {/* SCRUM-33: Create New Report button */}
+      <PrimaryButton
+        label="Create New Report"
+        variant="secondary"
+        onPress={handleNewReport}
+      />
 
       <Card>
         <View style={styles.sectionHeader}>
@@ -168,13 +271,15 @@ export default function ReportsScreen() {
               onChangeText={(value) => setDraftForm((current) => ({ ...current, notes: value }))}
             />
 
+            {/* SCRUM-34: Save Draft Offline */}
+            <PrimaryButton label="Save Draft" variant="ghost" onPress={handleSaveDraft} />
             <PrimaryButton label="Submit Report" onPress={handleSubmit} />
           </>
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="copy-outline" size={24} color="#c4b79b" />
             <AppText variant="caption" tone="muted" style={styles.emptyText}>
-              Duplicate a submitted report above to start a new draft for the current cycle.
+              Create a new report or duplicate a submitted report to start a draft.
             </AppText>
           </View>
         )}
@@ -184,13 +289,13 @@ export default function ReportsScreen() {
         <View
           style={[
             styles.messageBar,
-            isSuccess ? styles.messageSuccess : isError ? styles.messageError : styles.messageInfo,
+            isSuccess ? styles.messageSuccess : isError ? styles.messageError : isQueued ? styles.messageQueued : styles.messageInfo,
           ]}
         >
           <Ionicons
-            name={isSuccess ? "checkmark-circle" : isError ? "alert-circle" : "information-circle"}
+            name={isSuccess ? "checkmark-circle" : isError ? "alert-circle" : isQueued ? "cloud-upload" : "information-circle"}
             size={16}
-            color={isSuccess ? "#1f7a3f" : isError ? "#b5332a" : "#3f6a52"}
+            color={isSuccess ? "#1f7a3f" : isError ? "#b5332a" : isQueued ? "#8a6514" : "#3f6a52"}
           />
           <AppText
             variant="caption"
@@ -252,6 +357,41 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
+  connectivityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  connectivityInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  dotOnline: {
+    backgroundColor: "#1f7a3f",
+  },
+  dotOffline: {
+    backgroundColor: "#b5332a",
+  },
+  toggleLink: {
+    textDecorationLine: "underline",
+    fontWeight: "600",
+  },
+  syncQueueInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: "#fdf8ec",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
   messageBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -268,6 +408,10 @@ const styles = StyleSheet.create({
   messageError: {
     backgroundColor: "#fdf0ef",
     borderColor: "#f0c4c0",
+  },
+  messageQueued: {
+    backgroundColor: "#fdf8ec",
+    borderColor: "#edd9a8",
   },
   messageInfo: {
     backgroundColor: "#e6efe9",
