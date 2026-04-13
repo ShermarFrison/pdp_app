@@ -6,3 +6,5 @@
 - Safe newline repair pattern: read description, convert ADF to text, replace literal `\\n` tokens with actual line breaks, convert back to ADF, then update.
 - Always verify post-update with a second API pass (for example, check that description text no longer contains literal `\\n`) and spot-check in UI.
 - If bulk operation shows unexpected behavior, disable or stop the mechanism immediately before further writes.
+- In this Jira project, `Task` issues can be created through `POST /rest/api/3/issue` with `fields.parent.key` pointing to an epic, plus `customfield_10020` for Sprint and `customfield_10016` for story points in the same request.
+- Reassigning work items between open sprints worked reliably via `POST /rest/agile/1.0/sprint/{sprintId}/issue` with an `issues` array, and the destination sprint replaced the prior open-sprint assignment for the moved issues.
