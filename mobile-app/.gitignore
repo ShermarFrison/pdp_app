@@ -14,4 +14,6 @@ ios/
 *.ipa
 *.tar.gz
 expo-env.d.ts
+.expo/
+dist/
 # @end expo-cli

@@ -45,13 +45,59 @@ export type ComplianceReport = {
   basedOnReportId?: string;
 };
 
+export type EvidenceAttachment = {
+  id: string;
+  taskId: string;
+  uri: string;
+  fileName: string;
+  type: "photo" | "pdf";
+  sizeBytes: number;
+  addedAt: string;
+};
+
+export type RegulationChange = {
+  id: string;
+  title: string;
+  summary: string;
+  effectiveDate: string;
+  publishedAt: string;
+  relatedTaskIds: string[];
+  read: boolean;
+};
+
+export type TicketStatus = "open" | "in_progress" | "resolved";
+
+export type HelpTicket = {
+  id: string;
+  category: string;
+  message: string;
+  screenshotUri?: string;
+  status: TicketStatus;
+  createdAt: string;
+  confirmationId: string;
+};
+
+export type SyncQueueItem = {
+  id: string;
+  action: "report.submit" | "report.save";
+  payload: Partial<ComplianceReport> & { reportId: string };
+  createdAt: string;
+};
+
 export type AuditEventType =
   | "login"
   | "logout"
   | "profile.save"
   | "profile.sync"
   | "report.duplicate"
-  | "report.submit";
+  | "report.submit"
+  | "report.create"
+  | "report.draft_save"
+  | "report.sync"
+  | "evidence.upload"
+  | "evidence.remove"
+  | "ticket.submit"
+  | "regulation.read";
 
 export type AuditLogEntry = {
   id: string;
@@ -68,4 +114,10 @@ export type AppState = {
   auditLogs: AuditLogEntry[];
   remindersEnabled: boolean;
   reminderDaysBefore: number;
+  reminderOffsets: number[];
+  evidenceAttachments: EvidenceAttachment[];
+  regulationChanges: RegulationChange[];
+  helpTickets: HelpTicket[];
+  syncQueue: SyncQueueItem[];
+  isOnline: boolean;
 };

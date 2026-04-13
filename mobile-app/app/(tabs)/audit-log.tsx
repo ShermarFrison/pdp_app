@@ -8,13 +8,22 @@ import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
 import { AuditEventType } from "@/types";
 
-const eventConfig: Record<AuditEventType, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
+const DEFAULT_EVENT_CONFIG = { icon: "ellipse-outline" as const, color: "#6b6259", bg: "#f0ede6" };
+
+const eventConfig: Partial<Record<AuditEventType, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }>> = {
   login: { icon: "log-in-outline", color: "#2a5a8a", bg: "#e8f0f8" },
   logout: { icon: "log-out-outline", color: "#6b6259", bg: "#f0ede6" },
   "profile.save": { icon: "save-outline", color: "#3f6a52", bg: "#e6efe9" },
   "profile.sync": { icon: "cloud-upload-outline", color: "#3f6a52", bg: "#e6efe9" },
   "report.duplicate": { icon: "copy-outline", color: "#8a6514", bg: "#fdf4e3" },
   "report.submit": { icon: "checkmark-circle-outline", color: "#1a6b36", bg: "#e3f3e8" },
+  "report.create": { icon: "add-circle-outline", color: "#2a5a8a", bg: "#e8f0f8" },
+  "report.draft_save": { icon: "save-outline", color: "#8a6514", bg: "#fdf4e3" },
+  "report.sync": { icon: "sync-outline", color: "#3f6a52", bg: "#e6efe9" },
+  "evidence.upload": { icon: "attach", color: "#3f6a52", bg: "#e6efe9" },
+  "evidence.remove": { icon: "trash-outline", color: "#b5332a", bg: "#fdf0ef" },
+  "ticket.submit": { icon: "help-circle-outline", color: "#2a5a8a", bg: "#e8f0f8" },
+  "regulation.read": { icon: "newspaper-outline", color: "#8a6514", bg: "#fdf4e3" },
 };
 
 export default function AuditLogScreen() {
@@ -45,7 +54,7 @@ export default function AuditLogScreen() {
           </AppText>
 
           {auditLogs.map((entry, index) => {
-            const config = eventConfig[entry.type];
+            const config = eventConfig[entry.type] ?? DEFAULT_EVENT_CONFIG;
             return (
               <View key={entry.id}>
                 {index > 0 && <Divider />}
