@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/AppText";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 import DashboardScreen from "./index";
 import ProfileScreen from "./profile";
@@ -15,18 +16,19 @@ import CalendarScreen from "./calendar";
 import RegulationsScreen from "./regulations";
 import HelpScreen from "./help";
 
-const TAB_ITEMS = [
-  { key: "dashboard", title: "Dashboard", icon: "grid-outline" as const, iconActive: "grid" as const },
-  { key: "calendar", title: "Calendar", icon: "calendar-outline" as const, iconActive: "calendar" as const },
-  { key: "reports", title: "Reports", icon: "document-text-outline" as const, iconActive: "document-text" as const },
-  { key: "regulations", title: "Rules", icon: "newspaper-outline" as const, iconActive: "newspaper" as const },
-  { key: "profile", title: "Profile", icon: "leaf-outline" as const, iconActive: "leaf" as const },
-  { key: "help", title: "Help", icon: "help-circle-outline" as const, iconActive: "help-circle" as const },
-  { key: "audit", title: "Audit", icon: "shield-checkmark-outline" as const, iconActive: "shield-checkmark" as const },
+const TAB_ITEMS_BASE = [
+  { key: "dashboard", i18nKey: "tab.dashboard" as const, icon: "grid-outline" as const, iconActive: "grid" as const },
+  { key: "calendar", i18nKey: "tab.calendar" as const, icon: "calendar-outline" as const, iconActive: "calendar" as const },
+  { key: "reports", i18nKey: "tab.reports" as const, icon: "document-text-outline" as const, iconActive: "document-text" as const },
+  { key: "regulations", i18nKey: "tab.regulations" as const, icon: "newspaper-outline" as const, iconActive: "newspaper" as const },
+  { key: "profile", i18nKey: "tab.profile" as const, icon: "leaf-outline" as const, iconActive: "leaf" as const },
+  { key: "help", i18nKey: "tab.help" as const, icon: "help-circle-outline" as const, iconActive: "help-circle" as const },
+  { key: "audit", i18nKey: "tab.audit" as const, icon: "shield-checkmark-outline" as const, iconActive: "shield-checkmark" as const },
 ];
 
 export default function TabLayout() {
-  const { sessionUser, regulationChanges } = useApp();
+  const { sessionUser, regulationChanges, language } = useApp();
+  const tabItems = TAB_ITEMS_BASE.map((tab) => ({ ...tab, title: t(tab.i18nKey, language) }));
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -40,7 +42,7 @@ export default function TabLayout() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* TOP TAB BAR */}
       <View style={styles.topBar}>
-        {TAB_ITEMS.map((tab) => {
+        {tabItems.map((tab) => {
           const active = activeTab === tab.key;
           const showBadge = tab.key === "regulations" && unreadRegulations > 0;
           return (

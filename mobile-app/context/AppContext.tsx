@@ -1,27 +1,35 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
 
 import {
+  DEFAULT_LANGUAGE,
   DEFAULT_PASSWORD,
+  DEFAULT_REMINDER_OFFSETS,
   DEFAULT_USER,
   EMPTY_PROFILE,
-  SEEDED_REPORTS,
-  SEEDED_REGULATIONS,
-  DEFAULT_REMINDER_OFFSETS,
+  INITIAL_REMINDER_DAYS,
   MAX_EVIDENCE_SIZE_BYTES,
+  SEEDED_REGULATIONS,
+  SEEDED_REPORTS,
 } from "@/data/seed";
 import { loadState, saveState } from "@/lib/storage";
 import {
+  Advisor,
+  AdvisorPermission,
+  AppLanguage,
   AppState,
   AuditEventType,
   ComplianceReport,
+  ConflictField,
+  ConflictFieldKey,
   EvidenceAttachment,
   FarmProfile,
   HelpTicket,
+  OcrExtraction,
   RegulationChange,
+  SyncConflict,
   SyncQueueItem,
   User,
 } from "@/types";
-import { INITIAL_REMINDER_DAYS } from "@/data/seed";
 
 type LoginResult = {
   ok: boolean;
@@ -42,6 +50,10 @@ type AppContextValue = {
   helpTickets: HelpTicket[];
   syncQueue: SyncQueueItem[];
   isOnline: boolean;
+  ocrExtractions: OcrExtraction[];
+  syncConflicts: SyncConflict[];
+  advisors: Advisor[];
+  language: AppLanguage;
 
   setReminders: (enabled: boolean, daysBefore: number) => void;
   setReminderOffsets: (offsets: number[]) => void;
@@ -53,13 +65,19 @@ type AppContextValue = {
   submitReport: (reportId: string, updates: Partial<ComplianceReport>) => Promise<{ ok: boolean; error?: string }>;
   createNewReport: () => Promise<ComplianceReport>;
   saveDraftOffline: (reportId: string, updates: Partial<ComplianceReport>) => Promise<void>;
-  syncReports: () => Promise<{ synced: number; failed: number }>;
+  syncReports: () => Promise<{ synced: number; failed: number; conflicts: number }>;
   setOnlineStatus: (online: boolean) => void;
   addEvidence: (taskId: string, uri: string, fileName: string, type: "photo" | "pdf", sizeBytes: number) => Promise<{ ok: boolean; error?: string }>;
   removeEvidence: (evidenceId: string) => Promise<void>;
   getEvidenceForTask: (taskId: string) => EvidenceAttachment[];
   markRegulationRead: (regulationId: string) => Promise<void>;
   submitHelpTicket: (category: string, message: string, screenshotUri?: string) => Promise<HelpTicket>;
+  applyOcrExtraction: (reportId: string, extraction: OcrExtraction) => Promise<void>;
+  resolveConflict: (conflictId: string, resolutions: Partial<Record<ConflictFieldKey, string>>) => Promise<void>;
+  inviteAdvisor: (email: string, permission: AdvisorPermission) => Promise<{ ok: boolean; error?: string }>;
+  revokeAdvisor: (advisorId: string) => Promise<void>;
+  setLanguage: (lang: AppLanguage) => void;
+  exportAuditLog: (fromDate: string, toDate: string, format: "csv" | "json") => Promise<string>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -86,6 +104,10 @@ export function AppProvider({ children }: PropsWithChildren) {
     helpTickets: [],
     syncQueue: [],
     isOnline: true,
+    ocrExtractions: [],
+    syncConflicts: [],
+    advisors: [],
+    language: DEFAULT_LANGUAGE,
   });
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -95,13 +117,16 @@ export function AppProvider({ children }: PropsWithChildren) {
       setState((prev) => ({
         ...prev,
         ...loaded,
-        // Ensure new fields have defaults for existing stored state
         reminderOffsets: loaded.reminderOffsets ?? DEFAULT_REMINDER_OFFSETS,
         evidenceAttachments: loaded.evidenceAttachments ?? [],
         regulationChanges: loaded.regulationChanges ?? SEEDED_REGULATIONS,
         helpTickets: loaded.helpTickets ?? [],
         syncQueue: loaded.syncQueue ?? [],
         isOnline: loaded.isOnline ?? true,
+        ocrExtractions: loaded.ocrExtractions ?? [],
+        syncConflicts: loaded.syncConflicts ?? [],
+        advisors: loaded.advisors ?? [],
+        language: loaded.language ?? DEFAULT_LANGUAGE,
       }));
       setIsHydrated(true);
     }
@@ -164,9 +189,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   async function saveProfile(profile: FarmProfile) {
     setState((current) => ({
       ...current,
-      farmProfile: {
-        ...profile,
-      },
+      farmProfile: { ...profile },
     }));
     await appendLog("profile.save", "Farm profile saved locally.");
   }
@@ -240,13 +263,10 @@ export function AppProvider({ children }: PropsWithChildren) {
     }
 
     if (!state.isOnline) {
-      // Queue for later sync
       setState((current) => ({
         ...current,
         reports: current.reports.map((report) =>
-          report.id === reportId
-            ? { ...report, ...updates }
-            : report,
+          report.id === reportId ? { ...report, ...updates } : report,
         ),
         syncQueue: [
           ...current.syncQueue,
@@ -280,7 +300,6 @@ export function AppProvider({ children }: PropsWithChildren) {
     return { ok: true };
   }
 
-  // SCRUM-33: Create a new blank report
   async function createNewReport(): Promise<ComplianceReport> {
     const newReport: ComplianceReport = {
       id: id("report"),
@@ -302,54 +321,88 @@ export function AppProvider({ children }: PropsWithChildren) {
     return newReport;
   }
 
-  // SCRUM-34: Save draft offline
   async function saveDraftOffline(reportId: string, updates: Partial<ComplianceReport>) {
     setState((current) => ({
       ...current,
       reports: current.reports.map((report) =>
-        report.id === reportId
-          ? { ...report, ...updates }
-          : report,
+        report.id === reportId ? { ...report, ...updates } : report,
       ),
     }));
     await appendLog("report.draft_save", `Draft ${reportId} saved locally.`);
   }
 
-  // SCRUM-34: Sync queued reports
-  async function syncReports(): Promise<{ synced: number; failed: number }> {
+  // SCRUM-40: Sync queued reports with conflict detection
+  async function syncReports(): Promise<{ synced: number; failed: number; conflicts: number }> {
     const queue = state.syncQueue;
     let synced = 0;
     let failed = 0;
+    const newConflicts: SyncConflict[] = [];
+    const conflictReportIds: string[] = [];
+    const submittedIds: string[] = [];
 
     for (const item of queue) {
       if (item.action === "report.submit") {
         const report = state.reports.find((r) => r.id === item.payload.reportId);
         if (report) {
-          setState((current) => ({
-            ...current,
-            reports: current.reports.map((r) =>
-              r.id === item.payload.reportId
-                ? { ...r, status: "submitted", submittedAt: new Date().toISOString() }
-                : r,
-            ),
-          }));
-          synced++;
+          const merged = { ...report, ...item.payload };
+          if (merged.fieldSummary || merged.notes) {
+            const fields: ConflictField[] = [];
+            if (merged.fieldSummary) {
+              fields.push({
+                key: "fieldSummary",
+                localValue: merged.fieldSummary,
+                serverValue: merged.fieldSummary + " [server revision]",
+              });
+            }
+            if (merged.notes) {
+              fields.push({
+                key: "notes",
+                localValue: merged.notes,
+                serverValue: merged.notes + " [server note]",
+              });
+            }
+            newConflicts.push({
+              id: id("conflict"),
+              reportId: item.payload.reportId,
+              fields,
+              detectedAt: new Date().toISOString(),
+            });
+            conflictReportIds.push(item.payload.reportId);
+          } else {
+            submittedIds.push(item.payload.reportId);
+            synced++;
+          }
         } else {
           failed++;
         }
       }
     }
 
+    const now = new Date().toISOString();
     setState((current) => ({
       ...current,
-      syncQueue: [],
+      reports: current.reports.map((r) =>
+        submittedIds.includes(r.id)
+          ? { ...r, status: "submitted", submittedAt: now }
+          : r,
+      ),
+      syncConflicts: [
+        ...current.syncConflicts.filter((c) => !newConflicts.some((nc) => nc.reportId === c.reportId)),
+        ...newConflicts,
+      ],
+      syncQueue: current.syncQueue.filter((item) =>
+        conflictReportIds.includes(item.payload.reportId),
+      ),
     }));
 
+    if (newConflicts.length > 0) {
+      await appendLog("sync.conflict", `${newConflicts.length} conflict(s) detected during sync.`);
+    }
     if (synced > 0) {
-      await appendLog("report.sync", `Synced ${synced} queued report(s). ${failed > 0 ? `${failed} failed.` : ""}`);
+      await appendLog("report.sync", `Synced ${synced} queued report(s).${failed > 0 ? ` ${failed} failed.` : ""}`);
     }
 
-    return { synced, failed };
+    return { synced, failed, conflicts: newConflicts.length };
   }
 
   function setOnlineStatus(online: boolean) {
@@ -359,7 +412,6 @@ export function AppProvider({ children }: PropsWithChildren) {
     }));
   }
 
-  // SCRUM-37: Add evidence attachment
   async function addEvidence(
     taskId: string,
     uri: string,
@@ -405,7 +457,6 @@ export function AppProvider({ children }: PropsWithChildren) {
     return state.evidenceAttachments.filter((e) => e.taskId === taskId);
   }
 
-  // SCRUM-45: Mark regulation as read
   async function markRegulationRead(regulationId: string) {
     setState((current) => ({
       ...current,
@@ -416,7 +467,6 @@ export function AppProvider({ children }: PropsWithChildren) {
     await appendLog("regulation.read", `Marked regulation ${regulationId} as read.`);
   }
 
-  // SCRUM-46: Submit help ticket
   async function submitHelpTicket(category: string, message: string, screenshotUri?: string): Promise<HelpTicket> {
     const ticket: HelpTicket = {
       id: id("ticket"),
@@ -437,6 +487,118 @@ export function AppProvider({ children }: PropsWithChildren) {
     return ticket;
   }
 
+  // SCRUM-38: Apply OCR extraction to a report
+  async function applyOcrExtraction(reportId: string, extraction: OcrExtraction) {
+    const withApplied: OcrExtraction = { ...extraction, appliedToReportId: reportId };
+    setState((current) => ({
+      ...current,
+      ocrExtractions: [...current.ocrExtractions, withApplied],
+    }));
+    await appendLog("ocr.prefill", `OCR extraction from "${extraction.sourceFileName}" applied to report ${reportId}.`);
+  }
+
+  // SCRUM-40: Resolve a sync conflict
+  async function resolveConflict(conflictId: string, resolutions: Partial<Record<ConflictFieldKey, string>>) {
+    const conflict = state.syncConflicts.find((c) => c.id === conflictId);
+    if (!conflict) return;
+
+    const resolvedAt = new Date().toISOString();
+    setState((current) => ({
+      ...current,
+      reports: current.reports.map((r) =>
+        r.id === conflict.reportId
+          ? { ...r, ...(resolutions as Partial<ComplianceReport>), status: "submitted", submittedAt: resolvedAt }
+          : r,
+      ),
+      syncConflicts: current.syncConflicts.map((c) =>
+        c.id === conflictId
+          ? {
+              ...c,
+              fields: c.fields.map((f) => ({
+                ...f,
+                chosenValue: resolutions[f.key] ?? f.localValue,
+              })),
+              resolvedAt,
+            }
+          : c,
+      ),
+      syncQueue: current.syncQueue.filter((item) => item.payload.reportId !== conflict.reportId),
+    }));
+    await appendLog("sync.conflict_resolve", `Conflict ${conflictId} resolved for report ${conflict.reportId}.`);
+  }
+
+  // SCRUM-43: Invite an advisor
+  async function inviteAdvisor(email: string, permission: AdvisorPermission): Promise<{ ok: boolean; error?: string }> {
+    if (!email.includes("@")) {
+      return { ok: false, error: "Invalid email address." };
+    }
+    const duplicate = state.advisors.find((a) => a.email === email && a.active);
+    if (duplicate) {
+      return { ok: false, error: "This advisor is already active." };
+    }
+    const advisor: Advisor = {
+      id: id("advisor"),
+      email,
+      permission,
+      invitedAt: new Date().toISOString(),
+      active: true,
+    };
+    setState((current) => ({
+      ...current,
+      advisors: [...current.advisors, advisor],
+    }));
+    await appendLog("advisor.invite", `Invited advisor ${email} with ${permission} access.`);
+    return { ok: true };
+  }
+
+  // SCRUM-43: Revoke advisor access
+  async function revokeAdvisor(advisorId: string) {
+    const advisor = state.advisors.find((a) => a.id === advisorId);
+    setState((current) => ({
+      ...current,
+      advisors: current.advisors.map((a) =>
+        a.id === advisorId ? { ...a, active: false, revokedAt: new Date().toISOString() } : a,
+      ),
+    }));
+    if (advisor) {
+      await appendLog("advisor.revoke", `Revoked advisor access for ${advisor.email}.`);
+    }
+  }
+
+  // SCRUM-44: Set interface language
+  function setLanguage(lang: AppLanguage) {
+    setState((current) => ({ ...current, language: lang }));
+  }
+
+  // SCRUM-47: Export audit log
+  async function exportAuditLog(fromDate: string, toDate: string, format: "csv" | "json"): Promise<string> {
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    to.setHours(23, 59, 59, 999);
+
+    const filtered = state.auditLogs.filter((entry) => {
+      const ts = new Date(entry.timestamp);
+      return ts >= from && ts <= to;
+    });
+
+    let content: string;
+    if (format === "csv") {
+      const header = "id,type,userEmail,timestamp,details";
+      const rows = filtered.map((e) =>
+        [e.id, e.type, e.userEmail, e.timestamp, `"${e.details.replace(/"/g, '""')}"`].join(","),
+      );
+      content = [header, ...rows].join("\n");
+    } else {
+      content = JSON.stringify(filtered, null, 2);
+    }
+
+    await appendLog(
+      "audit.export",
+      `Exported ${filtered.length} audit log entries (${format.toUpperCase()}) from ${fromDate} to ${toDate}.`,
+    );
+    return content;
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -453,6 +615,10 @@ export function AppProvider({ children }: PropsWithChildren) {
         helpTickets: state.helpTickets,
         syncQueue: state.syncQueue,
         isOnline: state.isOnline,
+        ocrExtractions: state.ocrExtractions,
+        syncConflicts: state.syncConflicts,
+        advisors: state.advisors,
+        language: state.language,
 
         setReminders,
         setReminderOffsets,
@@ -471,6 +637,12 @@ export function AppProvider({ children }: PropsWithChildren) {
         getEvidenceForTask,
         markRegulationRead,
         submitHelpTicket,
+        applyOcrExtraction,
+        resolveConflict,
+        inviteAdvisor,
+        revokeAdvisor,
+        setLanguage,
+        exportAuditLog,
       }}
     >
       {children}

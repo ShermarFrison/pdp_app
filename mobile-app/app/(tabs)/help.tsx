@@ -11,6 +11,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
 import { TICKET_CATEGORIES } from "@/data/seed";
+import { t } from "@/lib/i18n";
 import { TicketStatus } from "@/types";
 
 const statusBadge: Record<TicketStatus, "blue" | "amber" | "green"> = {
@@ -26,7 +27,7 @@ const statusLabel: Record<TicketStatus, string> = {
 };
 
 export default function HelpScreen() {
-  const { helpTickets, submitHelpTicket } = useApp();
+  const { helpTickets, submitHelpTicket, language } = useApp();
   const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
   const [screenshotUri, setScreenshotUri] = useState("");
@@ -67,16 +68,14 @@ export default function HelpScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <AppText variant="title">Help & Support</AppText>
-        <AppText tone="muted">
-          Submit a ticket and we will get back to you.
-        </AppText>
+        <AppText variant="title">{t("help.title", language)}</AppText>
+        <AppText tone="muted">{t("help.subtitle", language)}</AppText>
       </View>
 
       <Card variant="elevated">
         <View style={styles.sectionHeader}>
           <Ionicons name="create-outline" size={16} color="#3f6a52" />
-          <AppText variant="subtitle">New Ticket</AppText>
+          <AppText variant="subtitle">{t("help.new_ticket", language)}</AppText>
         </View>
 
         {/* Category selector */}
@@ -121,7 +120,7 @@ export default function HelpScreen() {
             </View>
           ) : (
             <PrimaryButton
-              label="Attach Screenshot"
+              label={t("help.attach_screenshot", language)}
               variant="ghost"
               compact
               onPress={simulateScreenshot}
@@ -129,7 +128,7 @@ export default function HelpScreen() {
           )}
         </View>
 
-        <PrimaryButton label="Submit Ticket" onPress={handleSubmit} />
+        <PrimaryButton label={t("help.submit", language)} onPress={handleSubmit} />
 
         {feedback ? (
           <View style={[styles.feedbackBar, isSuccess ? styles.feedbackSuccess : isError ? styles.feedbackError : null]}>
@@ -153,7 +152,7 @@ export default function HelpScreen() {
       <Card>
         <Pressable style={styles.sectionHeader} onPress={() => setShowHistory(!showHistory)}>
           <Ionicons name="time-outline" size={16} color="#3f6a52" />
-          <AppText variant="subtitle">My Tickets</AppText>
+          <AppText variant="subtitle">{t("help.my_tickets", language)}</AppText>
           <Badge label={String(helpTickets.length)} color="gray" />
           <Ionicons
             name={showHistory ? "chevron-up" : "chevron-down"}

@@ -97,7 +97,13 @@ export type AuditEventType =
   | "evidence.upload"
   | "evidence.remove"
   | "ticket.submit"
-  | "regulation.read";
+  | "regulation.read"
+  | "ocr.prefill"
+  | "sync.conflict"
+  | "sync.conflict_resolve"
+  | "advisor.invite"
+  | "advisor.revoke"
+  | "audit.export";
 
 export type AuditLogEntry = {
   id: string;
@@ -106,6 +112,47 @@ export type AuditLogEntry = {
   timestamp: string;
   details: string;
 };
+
+export type OcrConfidence = "high" | "low";
+
+export type OcrExtraction = {
+  documentType: string;
+  documentDate: string;
+  referenceId: string;
+  confidence: OcrConfidence;
+  sourceFileName: string;
+  appliedToReportId?: string;
+};
+
+export type ConflictFieldKey = "title" | "scheme" | "periodYear" | "inspectionDate" | "fieldSummary" | "notes";
+
+export type ConflictField = {
+  key: ConflictFieldKey;
+  localValue: string;
+  serverValue: string;
+  chosenValue?: string;
+};
+
+export type SyncConflict = {
+  id: string;
+  reportId: string;
+  fields: ConflictField[];
+  detectedAt: string;
+  resolvedAt?: string;
+};
+
+export type AdvisorPermission = "read-only" | "edit";
+
+export type Advisor = {
+  id: string;
+  email: string;
+  permission: AdvisorPermission;
+  invitedAt: string;
+  revokedAt?: string;
+  active: boolean;
+};
+
+export type AppLanguage = "en" | "lt";
 
 export type AppState = {
   sessionUser: User | null;
@@ -120,4 +167,8 @@ export type AppState = {
   helpTickets: HelpTicket[];
   syncQueue: SyncQueueItem[];
   isOnline: boolean;
+  ocrExtractions: OcrExtraction[];
+  syncConflicts: SyncConflict[];
+  advisors: Advisor[];
+  language: AppLanguage;
 };

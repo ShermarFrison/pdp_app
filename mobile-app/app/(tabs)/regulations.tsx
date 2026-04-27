@@ -8,10 +8,11 @@ import { Card } from "@/components/Card";
 import { Divider } from "@/components/Divider";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 import { deriveTasks } from "@/lib/tasks";
 
 export default function RegulationsScreen() {
-  const { regulationChanges, markRegulationRead, farmProfile } = useApp();
+  const { regulationChanges, markRegulationRead, farmProfile, language } = useApp();
   const tasks = deriveTasks(farmProfile);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -40,14 +41,12 @@ export default function RegulationsScreen() {
     <Screen>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <AppText variant="title">Regulation Changes</AppText>
+          <AppText variant="title">{t("regulations.title", language)}</AppText>
           {unreadCount > 0 && (
-            <Badge label={`${unreadCount} new`} color="red" />
+            <Badge label={`${unreadCount} ${t("regulations.new", language)}`} color="red" />
           )}
         </View>
-        <AppText tone="muted">
-          Stay updated on CAP requirement changes that affect your farm.
-        </AppText>
+        <AppText tone="muted">{t("regulations.subtitle", language)}</AppText>
       </View>
 
       {regulationChanges.length === 0 ? (
@@ -99,7 +98,7 @@ export default function RegulationsScreen() {
                       <View style={styles.relatedSection}>
                         <View style={styles.relatedHeader}>
                           <Ionicons name="link-outline" size={14} color="#3f6a52" />
-                          <AppText variant="label" tone="accent">Impacted Tasks</AppText>
+                          <AppText variant="label" tone="accent">{t("regulations.impacted_tasks", language)}</AppText>
                         </View>
                         {relatedTasks.map((title) => (
                           <View key={title} style={styles.relatedTask}>

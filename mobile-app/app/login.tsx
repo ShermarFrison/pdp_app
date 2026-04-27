@@ -9,9 +9,10 @@ import { Field } from "@/components/Field";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export default function LoginScreen() {
-  const { login } = useApp();
+  const { login, language } = useApp();
   const [email, setEmail] = useState("farmer@pdp.test");
   const [password, setPassword] = useState("harvest123");
   const [error, setError] = useState("");
@@ -36,12 +37,12 @@ export default function LoginScreen() {
         </View>
         <AppText variant="title">Compliance Navigator</AppText>
         <AppText tone="muted" style={styles.tagline}>
-          Simplify CAP compliance for Lithuanian farmers. Track tasks, manage reports, stay audit-ready.
+          {t("login.tagline", language)}
         </AppText>
       </View>
 
       <Card variant="elevated">
-        <AppText variant="subtitle">Sign in to your farm</AppText>
+        <AppText variant="subtitle">{t("login.title", language)}</AppText>
 
         <Field
           label="Email"
@@ -63,7 +64,7 @@ export default function LoginScreen() {
           </AppText>
         ) : null}
 
-        <PrimaryButton label="Open Dashboard" onPress={handleLogin} />
+        <PrimaryButton label={t("login.button", language)} onPress={handleLogin} />
 
         <View style={styles.hint}>
           <Ionicons name="information-circle-outline" size={14} color="#a09786" />

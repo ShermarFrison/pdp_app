@@ -1,4 +1,6 @@
-import { AppState, ComplianceReport, FarmProfile, RegulationChange, User } from "@/types";
+import { AppLanguage, AppState, ComplianceReport, FarmProfile, RegulationChange, User } from "@/types";
+
+export const DEFAULT_LANGUAGE: AppLanguage = "en";
 
 export const DEFAULT_USER: User = {
   id: "farmer-001",
@@ -102,4 +104,8 @@ export const INITIAL_STATE: AppState = {
   helpTickets: [],
   syncQueue: [],
   isOnline: true,
+  ocrExtractions: [],
+  syncConflicts: [],
+  advisors: [],
+  language: DEFAULT_LANGUAGE,
 };

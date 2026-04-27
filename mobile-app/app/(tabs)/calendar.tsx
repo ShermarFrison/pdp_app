@@ -8,6 +8,7 @@ import { Card } from "@/components/Card";
 import { Divider } from "@/components/Divider";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 import { deriveTasks } from "@/lib/tasks";
 import { ComplianceTask, TaskStatus } from "@/types";
 
@@ -38,7 +39,7 @@ function getFirstDayOfWeek(year: number, month: number) {
 }
 
 export default function CalendarScreen() {
-  const { farmProfile } = useApp();
+  const { farmProfile, language } = useApp();
   const tasks = deriveTasks(farmProfile);
 
   const today = new Date();
@@ -100,8 +101,8 @@ export default function CalendarScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <AppText variant="title">Calendar</AppText>
-        <AppText tone="muted">Compliance deadlines at a glance.</AppText>
+        <AppText variant="title">{t("calendar.title", language)}</AppText>
+        <AppText tone="muted">{t("calendar.subtitle", language)}</AppText>
       </View>
 
       <Card>
@@ -189,7 +190,7 @@ export default function CalendarScreen() {
         <Card>
           <View style={styles.sectionHeader}>
             <Ionicons name="alert-circle-outline" size={16} color="#b5332a" />
-            <AppText variant="subtitle" tone="danger">Past-Due Tasks</AppText>
+            <AppText variant="subtitle" tone="danger">{t("calendar.past_due", language)}</AppText>
           </View>
           {overduePinned.map((task, i) => (
             <View key={task.id}>
@@ -217,7 +218,7 @@ export default function CalendarScreen() {
             </AppText>
           </View>
           {selectedTasks.length === 0 ? (
-            <AppText variant="caption" tone="muted">No tasks due on this day.</AppText>
+            <AppText variant="caption" tone="muted">{t("calendar.no_tasks", language)}</AppText>
           ) : (
             selectedTasks.map((task, i) => (
               <View key={task.id}>

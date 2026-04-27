@@ -10,6 +10,7 @@ import { Divider } from "@/components/Divider";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 import { deriveTasks } from "@/lib/tasks";
 import { TaskStatus, RiskLevel } from "@/types";
 
@@ -51,7 +52,7 @@ function simulateFilePick(): Promise<{ uri: string; fileName: string; type: "pho
 }
 
 export default function DashboardScreen() {
-  const { sessionUser, farmProfile, logout, reports, addEvidence, removeEvidence, getEvidenceForTask } = useApp();
+  const { sessionUser, farmProfile, logout, reports, addEvidence, removeEvidence, getEvidenceForTask, language } = useApp();
   const tasks = deriveTasks(farmProfile);
   const draftCount = reports.filter((r) => r.status === "draft").length;
   const overdueTasks = tasks.filter((t) => t.status === "Overdue").length;
@@ -97,7 +98,7 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.greeting}>
         <View style={styles.greetingText}>
-          <AppText variant="title">Welcome back</AppText>
+          <AppText variant="title">{t("dashboard.welcome", language)}</AppText>
           <AppText tone="muted">{sessionUser?.name}</AppText>
         </View>
         <View style={styles.avatar}>
@@ -109,17 +110,17 @@ export default function DashboardScreen() {
       <View style={styles.statsRow}>
         <Pressable style={[styles.statCard, styles.statTasks]} onPress={() => setFilter("All")}>
           <AppText style={styles.statNumber}>{tasks.length}</AppText>
-          <AppText variant="caption" style={styles.statLabel}>Tasks</AppText>
+          <AppText variant="caption" style={styles.statLabel}>{t("dashboard.tasks", language)}</AppText>
         </Pressable>
         <Pressable style={[styles.statCard, styles.statOverdue]} onPress={() => setFilter("Overdue")}>
           <AppText style={[styles.statNumber, overdueTasks > 0 && styles.statDanger]}>
             {overdueTasks}
           </AppText>
-          <AppText variant="caption" style={styles.statLabel}>Overdue</AppText>
+          <AppText variant="caption" style={styles.statLabel}>{t("dashboard.overdue", language)}</AppText>
         </Pressable>
         <Pressable style={[styles.statCard, styles.statDrafts]}>
           <AppText style={styles.statNumber}>{draftCount}</AppText>
-          <AppText variant="caption" style={styles.statLabel}>Drafts</AppText>
+          <AppText variant="caption" style={styles.statLabel}>{t("dashboard.drafts", language)}</AppText>
         </Pressable>
       </View>
 
@@ -127,7 +128,7 @@ export default function DashboardScreen() {
       <Card>
         <View style={styles.sectionHeader}>
           <Ionicons name="checkbox-outline" size={18} color="#3f6a52" />
-          <AppText variant="subtitle">Compliance Tasks</AppText>
+          <AppText variant="subtitle">{t("dashboard.compliance_tasks", language)}</AppText>
         </View>
 
         {/* Filter tabs — SCRUM-31 */}
@@ -234,7 +235,7 @@ export default function DashboardScreen() {
                       <View style={styles.detailSection}>
                         <View style={styles.detailSectionHeader}>
                           <Ionicons name="attach" size={14} color="#3f6a52" />
-                          <AppText variant="label" tone="accent">Evidence Files</AppText>
+                          <AppText variant="label" tone="accent">{t("dashboard.evidence_files", language)}</AppText>
                         </View>
 
                         {evidence.length === 0 ? (
@@ -268,7 +269,7 @@ export default function DashboardScreen() {
                         )}
 
                         <PrimaryButton
-                          label="Upload Photo / PDF"
+                          label={t("dashboard.upload_evidence", language)}
                           variant="secondary"
                           compact
                           onPress={() => handleUploadEvidence(task.id)}
@@ -302,7 +303,7 @@ export default function DashboardScreen() {
         </AppText>
       </Card>
 
-      <PrimaryButton label="Sign Out" variant="ghost" onPress={handleLogout} />
+      <PrimaryButton label={t("dashboard.sign_out", language)} variant="ghost" onPress={handleLogout} />
     </Screen>
   );
 }

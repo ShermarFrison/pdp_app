@@ -1,11 +1,16 @@
-import { StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
 import { Card } from "@/components/Card";
 import { Divider } from "@/components/Divider";
+import { Field } from "@/components/Field";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
+import { SegmentedControl } from "@/components/SegmentedControl";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 import { AuditEventType } from "@/types";
 
 const DEFAULT_EVENT_CONFIG = { icon: "ellipse-outline" as const, color: "#6b6259", bg: "#f0ede6" };
@@ -24,19 +29,113 @@ const eventConfig: Partial<Record<AuditEventType, { icon: keyof typeof Ionicons.
   "evidence.remove": { icon: "trash-outline", color: "#b5332a", bg: "#fdf0ef" },
   "ticket.submit": { icon: "help-circle-outline", color: "#2a5a8a", bg: "#e8f0f8" },
   "regulation.read": { icon: "newspaper-outline", color: "#8a6514", bg: "#fdf4e3" },
+  "ocr.prefill": { icon: "scan-outline", color: "#2a5a8a", bg: "#e8f0f8" },
+  "sync.conflict": { icon: "git-compare-outline", color: "#8a6514", bg: "#fdf4e3" },
+  "sync.conflict_resolve": { icon: "checkmark-done-outline", color: "#1a6b36", bg: "#e3f3e8" },
+  "advisor.invite": { icon: "person-add-outline", color: "#3f6a52", bg: "#e6efe9" },
+  "advisor.revoke": { icon: "person-remove-outline", color: "#b5332a", bg: "#fdf0ef" },
+  "audit.export": { icon: "download-outline", color: "#2a5a8a", bg: "#e8f0f8" },
 };
 
 export default function AuditLogScreen() {
-  const { auditLogs } = useApp();
+  const { auditLogs, exportAuditLog, language } = useApp();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const [showExport, setShowExport] = useState(false);
+  const [exportFrom, setExportFrom] = useState(today);
+  const [exportTo, setExportTo] = useState(today);
+  const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
+  const [exportContent, setExportContent] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
+
+  async function handleGenerateExport() {
+    const content = await exportAuditLog(exportFrom, exportTo, exportFormat);
+    setExportContent(content);
+    setExportMessage("");
+  }
+
+  async function handleCopy() {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { Clipboard } = require("react-native");
+      Clipboard.setString(exportContent);
+      setExportMessage(t("export.copied", language));
+    } catch {
+      setExportMessage("Copy not supported — please select and copy the text manually.");
+    }
+  }
 
   return (
     <Screen>
       <View style={styles.header}>
-        <AppText variant="title">Audit Log</AppText>
-        <AppText tone="muted">
-          Immutable record of compliance actions with timestamps.
-        </AppText>
+        <AppText variant="title">{t("audit.title", language)}</AppText>
+        <AppText tone="muted">{t("audit.subtitle", language)}</AppText>
       </View>
+
+      {/* SCRUM-47: Export button */}
+      <PrimaryButton
+        label={t("audit.export", language)}
+        variant="secondary"
+        onPress={() => setShowExport((v) => !v)}
+      />
+
+      {/* SCRUM-47: Export card */}
+      {showExport && (
+        <Card variant="elevated">
+          <View style={styles.sectionHeader}>
+            <Ionicons name="download-outline" size={16} color="#2a5a8a" />
+            <AppText variant="subtitle" style={{ color: "#2a5a8a" }}>
+              {t("audit.export_title", language)}
+            </AppText>
+          </View>
+
+          <Field
+            label={t("export.date_from", language)}
+            value={exportFrom}
+            placeholder="YYYY-MM-DD"
+            onChangeText={setExportFrom}
+          />
+          <Field
+            label={t("export.date_to", language)}
+            value={exportTo}
+            placeholder="YYYY-MM-DD"
+            onChangeText={setExportTo}
+          />
+
+          <SegmentedControl
+            label="Format"
+            options={["CSV", "JSON"]}
+            value={exportFormat.toUpperCase()}
+            onSelect={(val) => setExportFormat(val.toLowerCase() as "csv" | "json")}
+          />
+
+          <PrimaryButton label={t("export.generate", language)} onPress={handleGenerateExport} />
+
+          {exportContent ? (
+            <>
+              <AppText variant="label" tone="muted">{t("export.preview", language)}</AppText>
+              <ScrollView style={styles.previewBox} nestedScrollEnabled>
+                <AppText style={styles.previewText}>
+                  {exportContent.slice(0, 500)}
+                  {exportContent.length > 500 ? "\n…" : ""}
+                </AppText>
+              </ScrollView>
+              <PrimaryButton
+                label={t("export.copy_clipboard", language)}
+                variant="ghost"
+                onPress={handleCopy}
+              />
+            </>
+          ) : null}
+
+          {exportMessage ? (
+            <View style={styles.exportMsg}>
+              <Ionicons name="checkmark-circle" size={14} color="#1f7a3f" />
+              <AppText variant="caption" tone="success">{exportMessage}</AppText>
+            </View>
+          ) : null}
+        </Card>
+      )}
 
       {auditLogs.length === 0 ? (
         <Card>
@@ -50,7 +149,7 @@ export default function AuditLogScreen() {
       ) : (
         <Card>
           <AppText variant="label" tone="muted">
-            {auditLogs.length} event{auditLogs.length !== 1 ? "s" : ""} recorded
+            {auditLogs.length} {t("audit.events_count", language)}
           </AppText>
 
           {auditLogs.map((entry, index) => {
@@ -102,6 +201,11 @@ const styles = StyleSheet.create({
   header: {
     gap: 6,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   emptyState: {
     alignItems: "center",
     gap: 10,
@@ -110,6 +214,29 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     paddingHorizontal: 20,
+  },
+  previewBox: {
+    maxHeight: 160,
+    backgroundColor: "#f4f0e6",
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ddd3be",
+  },
+  previewText: {
+    fontSize: 11,
+    fontFamily: "monospace",
+    color: "#4a4235",
+    lineHeight: 16,
+  },
+  exportMsg: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#e3f3e8",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   eventRow: {
     flexDirection: "row",

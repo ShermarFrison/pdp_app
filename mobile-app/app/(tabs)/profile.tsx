@@ -3,13 +3,16 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
+import { Badge } from "@/components/Badge";
 import { Card } from "@/components/Card";
+import { Divider } from "@/components/Divider";
 import { Field } from "@/components/Field";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { useApp } from "@/context/AppContext";
-import { FarmProfile } from "@/types";
+import { t } from "@/lib/i18n";
+import { AdvisorPermission, FarmProfile } from "@/types";
 
 type Errors = Partial<Record<keyof FarmProfile, string>>;
 
@@ -25,11 +28,21 @@ export default function ProfileScreen() {
     reminderOffsets,
     setReminders,
     setReminderOffsets,
+    advisors,
+    inviteAdvisor,
+    revokeAdvisor,
+    language,
+    setLanguage,
   } = useApp();
 
   const [form, setForm] = useState(farmProfile);
   const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState("");
+
+  // SCRUM-43: Advisor state
+  const [advisorEmail, setAdvisorEmail] = useState("");
+  const [advisorPermission, setAdvisorPermission] = useState<AdvisorPermission>("read-only");
+  const [advisorMessage, setAdvisorMessage] = useState("");
 
   useEffect(() => {
     setForm(farmProfile);
@@ -73,50 +86,49 @@ export default function ProfileScreen() {
     setMessage("Profile synced to the mocked backend.");
   }
 
-  // SCRUM-48: Toggle an offset in the multi-select
   function toggleOffset(days: number) {
     const current = reminderOffsets;
     const next = current.includes(days)
       ? current.filter((d) => d !== days)
       : [...current, days];
 
-    // Must have at least one offset selected when reminders are enabled
     if (next.length === 0) return;
 
     setReminderOffsets(next);
-    // Also update the legacy single value to the closest offset
     setReminders(remindersEnabled, Math.min(...next));
   }
 
-  // SCRUM-48: Disable reminders completely
   function handleToggleReminders() {
     const newEnabled = !remindersEnabled;
     setReminders(newEnabled, reminderDaysBefore);
+  }
 
-    if (!newEnabled) {
-      // Immediately stop — offsets are preserved but inactive
+  async function handleInviteAdvisor() {
+    const result = await inviteAdvisor(advisorEmail.trim(), advisorPermission);
+    if (!result.ok) {
+      setAdvisorMessage(result.error ?? "Failed to invite advisor.");
+      return;
     }
+    setAdvisorEmail("");
+    setAdvisorMessage("Advisor invited successfully.");
   }
 
   const isError = message.includes("Fix") || message.includes("Complete");
-
-  // Build preview text for SCRUM-48
   const sortedOffsets = [...reminderOffsets].sort((a, b) => b - a);
   const offsetPreview = sortedOffsets.map((d) => `${d} day${d !== 1 ? "s" : ""}`).join(", ");
+  const activeAdvisors = advisors.filter((a) => a.active);
 
   return (
     <Screen>
       <View style={styles.header}>
-        <AppText variant="title">Farm Profile</AppText>
-        <AppText tone="muted">
-          Your profile drives personalized compliance tasks and reporting.
-        </AppText>
+        <AppText variant="title">{t("profile.title", language)}</AppText>
+        <AppText tone="muted">{t("profile.subtitle", language)}</AppText>
       </View>
 
       <Card>
         <View style={styles.sectionHeader}>
           <Ionicons name="home-outline" size={16} color="#3f6a52" />
-          <AppText variant="label" tone="accent">Farm Details</AppText>
+          <AppText variant="label" tone="accent">{t("profile.farm_details", language)}</AppText>
         </View>
 
         <Field
@@ -144,7 +156,7 @@ export default function ProfileScreen() {
       <Card>
         <View style={styles.sectionHeader}>
           <Ionicons name="stats-chart-outline" size={16} color="#3f6a52" />
-          <AppText variant="label" tone="accent">Farm Operations</AppText>
+          <AppText variant="label" tone="accent">{t("profile.farm_ops", language)}</AppText>
         </View>
 
         <Field
@@ -192,8 +204,8 @@ export default function ProfileScreen() {
       ) : null}
 
       <View style={styles.actions}>
-        <PrimaryButton label="Save Local Draft" onPress={handleSave} />
-        <PrimaryButton label="Sync to Backend" variant="secondary" onPress={handleSync} />
+        <PrimaryButton label={t("profile.save_local", language)} onPress={handleSave} />
+        <PrimaryButton label={t("profile.sync_backend", language)} variant="secondary" onPress={handleSync} />
       </View>
 
       {farmProfile.lastSyncedAt ? (
@@ -205,11 +217,11 @@ export default function ProfileScreen() {
         </View>
       ) : null}
 
-      {/* SCRUM-48 — Configurable Reminder Schedule */}
+      {/* Reminder Schedule */}
       <Card>
         <View style={styles.sectionHeader}>
           <Ionicons name="notifications-outline" size={16} color="#3f6a52" />
-          <AppText variant="label" tone="accent">Reminder Schedule</AppText>
+          <AppText variant="label" tone="accent">{t("profile.reminders", language)}</AppText>
         </View>
 
         <View style={styles.toggleRow}>
@@ -268,6 +280,102 @@ export default function ProfileScreen() {
             <AppText variant="caption" tone="muted">
               Reminders are disabled. No notifications will be sent.
             </AppText>
+          </View>
+        )}
+      </Card>
+
+      {/* SCRUM-44: Language selection */}
+      <Card>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="language-outline" size={16} color="#3f6a52" />
+          <AppText variant="label" tone="accent">{t("profile.language", language)}</AppText>
+        </View>
+        <SegmentedControl
+          label=""
+          options={["English", "Lietuvių"]}
+          value={language === "en" ? "English" : "Lietuvių"}
+          onSelect={(val) => setLanguage(val === "English" ? "en" : "lt")}
+        />
+      </Card>
+
+      {/* SCRUM-43: Advisor Access */}
+      <Card>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="people-outline" size={16} color="#3f6a52" />
+          <AppText variant="label" tone="accent">{t("profile.advisors", language)}</AppText>
+        </View>
+
+        <Field
+          label="Advisor Email"
+          value={advisorEmail}
+          placeholder="advisor@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onChangeText={setAdvisorEmail}
+        />
+
+        <SegmentedControl
+          label="Permission"
+          options={["read-only", "edit"]}
+          value={advisorPermission}
+          onSelect={(val) => setAdvisorPermission(val as AdvisorPermission)}
+        />
+
+        <PrimaryButton
+          label={t("profile.invite_advisor", language)}
+          variant="secondary"
+          onPress={handleInviteAdvisor}
+        />
+
+        {advisorMessage ? (
+          <View
+            style={[
+              styles.messageBar,
+              advisorMessage.includes("successfully") ? styles.messageSuccess : styles.messageError,
+            ]}
+          >
+            <Ionicons
+              name={advisorMessage.includes("successfully") ? "checkmark-circle" : "alert-circle"}
+              size={16}
+              color={advisorMessage.includes("successfully") ? "#1f7a3f" : "#b5332a"}
+            />
+            <AppText
+              variant="caption"
+              tone={advisorMessage.includes("successfully") ? "success" : "danger"}
+            >
+              {advisorMessage}
+            </AppText>
+          </View>
+        ) : null}
+
+        {activeAdvisors.length > 0 && (
+          <>
+            <Divider />
+            {activeAdvisors.map((advisor, index) => (
+              <View key={advisor.id}>
+                {index > 0 && <Divider />}
+                <View style={styles.advisorRow}>
+                  <View style={styles.advisorInfo}>
+                    <AppText style={styles.advisorEmail}>{advisor.email}</AppText>
+                    <Badge
+                      label={advisor.permission}
+                      color={advisor.permission === "edit" ? "blue" : "gray"}
+                    />
+                  </View>
+                  <Pressable onPress={() => revokeAdvisor(advisor.id)} style={styles.revokeBtn}>
+                    <AppText variant="caption" tone="danger" style={styles.revokeText}>
+                      {t("profile.revoke_access", language)}
+                    </AppText>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
+
+        {activeAdvisors.length === 0 && (
+          <View style={styles.emptyAdvisors}>
+            <AppText variant="caption" tone="muted">No active advisors. Invite one above.</AppText>
           </View>
         )}
       </Card>
@@ -381,5 +489,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
+  },
+  advisorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingVertical: 6,
+  },
+  advisorInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  advisorEmail: {
+    fontWeight: "600",
+    fontSize: 13,
+    flex: 1,
+  },
+  revokeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  revokeText: {
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  emptyAdvisors: {
+    paddingVertical: 8,
+    alignItems: "center",
   },
 });
