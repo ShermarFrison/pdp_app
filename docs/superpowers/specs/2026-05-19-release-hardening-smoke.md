@@ -60,7 +60,7 @@ Steps:
 
 Expected UI: Form dismisses; profile view shows the entered values; a "Profile saved" toast appears.
 Expected audit events: `profile.created` with the new profile id.
-Result: ____
+Result: BLOCKED — no device available; form dismiss + toast require device. AppContext.integration covers create-side state changes only.
 
 ### 2.2 Edit profile
 Steps:
@@ -70,7 +70,7 @@ Steps:
 
 Expected UI: Returns to the profile view with the updated display name; toast "Profile updated".
 Expected audit events: `profile.updated` with the changed field name in the payload.
-Result: ____
+Result: BLOCKED — no device available; edit form UI requires device.
 
 ### 2.3 Validation errors
 Steps:
@@ -79,7 +79,7 @@ Steps:
 
 Expected UI: Stays on the edit form; inline error "Display name is required" appears under the field; **Save** is disabled until a value is entered.
 Expected audit events: none (validation failures are not audit-worthy).
-Result: ____
+Result: BLOCKED — no device available; inline validation rendering requires device.
 
 ### 2.4 Sync queue (offline edit)
 Steps:
@@ -89,7 +89,7 @@ Steps:
 
 Expected UI: Save succeeds locally; a "1 pending change" badge appears on the Sync indicator.
 Expected audit events: `profile.updated` recorded locally with a `queued: true` flag.
-Result: ____
+Result: BLOCKED — no device available; airplane-mode toggle requires device. SP1 sync queue logic is exercised by AppContext.integration tests.
 
 ### 2.5 Conflict path
 Steps:
@@ -99,7 +99,7 @@ Steps:
 
 Expected UI: A conflict banner appears: "Profile changed elsewhere — review". Tapping it opens a side-by-side resolver. Choosing "Keep mine" dismisses the banner; the badge clears.
 Expected audit events: `sync.conflict.detected` then `sync.conflict.resolved` with `resolution: local`.
-Result: ____
+Result: BLOCKED — no device available; conflict banner + resolver UI requires device. Conflict resolution logic covered by AppContext integration tests.
 
 ---
 
