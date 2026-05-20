@@ -26,7 +26,7 @@ Steps:
 
 Expected UI: Login screen dismisses; tab navigator appears with the Tasks tab selected; user display name appears in the Profile tab.
 Expected audit events: `auth.login.success` with the user id.
-Result: ____
+Result: BLOCKED — no device available; UI navigation/dismiss + toast must be observed on-device. No dedicated login integration test in repo.
 
 ### 1.2 Invalid credentials
 Steps:
@@ -35,7 +35,7 @@ Steps:
 
 Expected UI: Stays on login screen; inline error "Invalid credentials" appears under the password field; password field is cleared; **Sign in** button re-enables.
 Expected audit events: `auth.login.failure` with the attempted email (not the password).
-Result: ____
+Result: BLOCKED — no device available; inline error rendering requires device. No dedicated login integration test in repo.
 
 ### 1.3 Session restore after restart
 Steps:
@@ -45,7 +45,7 @@ Steps:
 
 Expected UI: Skips the login screen and lands directly on the Tasks tab; the same user is still shown in Profile.
 Expected audit events: `auth.session.restore` with the user id.
-Result: ____
+Result: BLOCKED — no device available; force-quit + relaunch requires device.
 
 ---
 
