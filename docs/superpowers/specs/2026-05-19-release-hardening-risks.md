@@ -41,6 +41,17 @@ Owner: <name>
 Notes: <free text>
 ```
 
+### F-01 (informational)
+```
+ID: F-01 (informational)
+Flow: e2e harness detection
+Summary: No Detox or Maestro harness configured in the repo.
+Severity: minor
+Decision: accepted-residual
+Owner: The V
+Notes: Per the spec, SP5 does not stand up a new e2e harness. Manual smoke + SP1-4 integration tests are the test surface for this release.
+```
+
 ### F-00 (informational)
 ```
 ID: F-00 (informational)
