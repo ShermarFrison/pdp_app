@@ -309,7 +309,7 @@ Steps:
 
 Expected UI: A pending invite row appears in the Advisors list with status "Pending"; a toast "Invite sent" appears.
 Expected audit events: `advisor.invite.sent` with the advisor email and scope.
-Result: ____
+Result: BLOCKED — no device available; invite form UI + pending row require device.
 
 ### 11.2 Scoped permission honored
 Steps:
@@ -320,7 +320,7 @@ Steps:
 
 Expected UI: Advisor sees the list of submitted reports read-only; the **New report** button is hidden; tapping any report opens it with all editing controls disabled.
 Expected audit events: `advisor.access.granted` (one-time on accept), then `report.viewed` on each open. No `report.draft.created` event should appear.
-Result: ____
+Result: BLOCKED — no device available; requires second device + UI gating verification.
 
 ### 11.3 Revoke
 Steps:
@@ -329,7 +329,7 @@ Steps:
 
 Expected UI: Row disappears from the active list and appears in the Revoked history with the current timestamp; the advisor's session on the second device shows "Access revoked" on next refresh.
 Expected audit events: `advisor.access.revoked` with the advisor id and timestamp.
-Result: ____
+Result: BLOCKED — no device available; revoke UI + revoked-history rendering require device.
 
 ### 11.4 Advisor actions are audit-logged
 Steps:
@@ -338,7 +338,7 @@ Steps:
 
 Expected UI: Every action performed by the advisor during the test (each `report.viewed`) appears with the advisor's id and email recorded as the actor.
 Expected audit events: this step verifies prior events; no new event fires.
-Result: ____
+Result: BLOCKED — no device available; depends on prior flows being executed on-device.
 
 ---
 
