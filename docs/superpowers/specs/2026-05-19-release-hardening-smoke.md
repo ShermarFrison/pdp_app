@@ -112,7 +112,7 @@ Steps:
 
 Expected UI: Tasks are grouped by category according to the externalized rules data file shipped in SP1; each group header matches a category id present in that file; no hardcoded category labels appear.
 Expected audit events: `tasks.list.viewed`.
-Result: ____
+Result: BLOCKED — no device available; list grouping visual layout requires device.
 
 ### 3.2 Notification deep-link
 Steps:
@@ -121,7 +121,7 @@ Steps:
 
 Expected UI: App launches (or foregrounds) and lands directly on the detail screen for the task referenced by the notification payload; the task title in the header matches.
 Expected audit events: `notification.opened` with the task id; `tasks.detail.viewed` for the same task id.
-Result: ____
+Result: BLOCKED — see R1 in risks doc (Expo Go iOS notification limitation) and no device available. Tap handler logic covered by __tests__/notifications/handler.test.ts.
 
 ---
 
