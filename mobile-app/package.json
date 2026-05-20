@@ -11,7 +11,7 @@
     "lint": "expo lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "check": "ts-node --transpile-only scripts/check-i18n.ts && jest"
+    "check": "ts-node --project scripts/tsconfig.json --transpile-only scripts/check-i18n.ts && jest"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
