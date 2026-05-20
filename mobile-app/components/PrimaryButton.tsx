@@ -8,9 +8,10 @@ type PrimaryButtonProps = {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   disabled?: boolean;
   compact?: boolean;
+  testID?: string;
 };
 
-export function PrimaryButton({ label, onPress, variant = "primary", disabled, compact }: PrimaryButtonProps) {
+export function PrimaryButton({ label, onPress, variant = "primary", disabled, compact, testID }: PrimaryButtonProps) {
   const textStyle =
     variant === "ghost"
       ? styles.ghostText
@@ -34,6 +35,7 @@ export function PrimaryButton({ label, onPress, variant = "primary", disabled, c
       ]}
       disabled={disabled}
       onPress={onPress}
+      testID={testID}
     >
       <AppText variant="body" style={[textStyle, compact && styles.compactText]}>
         {label}
