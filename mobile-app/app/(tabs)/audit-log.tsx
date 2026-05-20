@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
@@ -41,27 +41,36 @@ export default function AuditLogScreen() {
   const { auditLogs, exportAuditLog, language } = useApp();
 
   const today = new Date().toISOString().slice(0, 10);
+  const thirtyAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const [showExport, setShowExport] = useState(false);
-  const [exportFrom, setExportFrom] = useState(today);
+  const [exportFrom, setExportFrom] = useState(thirtyAgo);
   const [exportTo, setExportTo] = useState(today);
   const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
-  const [exportContent, setExportContent] = useState("");
+  const [exportUri, setExportUri] = useState("");
   const [exportMessage, setExportMessage] = useState("");
+  const [exportError, setExportError] = useState("");
 
-  async function handleGenerateExport() {
-    const content = await exportAuditLog(exportFrom, exportTo, exportFormat);
-    setExportContent(content);
-    setExportMessage("");
+  function isValidDate(s: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s).getTime());
   }
 
-  async function handleCopy() {
+  async function handleGenerateExport() {
+    setExportError("");
+    setExportMessage("");
+    if (!isValidDate(exportFrom) || !isValidDate(exportTo)) {
+      setExportError("Enter dates as YYYY-MM-DD.");
+      return;
+    }
+    if (new Date(exportFrom) > new Date(exportTo)) {
+      setExportError("From-date must be on or before the to-date.");
+      return;
+    }
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { Clipboard } = require("react-native");
-      Clipboard.setString(exportContent);
-      setExportMessage(t("export.copied", language));
-    } catch {
-      setExportMessage("Copy not supported — please select and copy the text manually.");
+      const uri = await exportAuditLog(exportFrom, exportTo, exportFormat);
+      setExportUri(uri);
+      setExportMessage(`Exported to ${uri}`);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Export failed.");
     }
   }
 
@@ -111,27 +120,24 @@ export default function AuditLogScreen() {
 
           <PrimaryButton label={t("export.generate", language)} onPress={handleGenerateExport} />
 
-          {exportContent ? (
-            <>
-              <AppText variant="label" tone="muted">{t("export.preview", language)}</AppText>
-              <ScrollView style={styles.previewBox} nestedScrollEnabled>
-                <AppText style={styles.previewText}>
-                  {exportContent.slice(0, 500)}
-                  {exportContent.length > 500 ? "\n…" : ""}
-                </AppText>
-              </ScrollView>
-              <PrimaryButton
-                label={t("export.copy_clipboard", language)}
-                variant="ghost"
-                onPress={handleCopy}
-              />
-            </>
+          {exportUri ? (
+            <View style={styles.exportMsg}>
+              <Ionicons name="document-outline" size={14} color="#2a5a8a" />
+              <AppText variant="caption" tone="muted">{exportUri}</AppText>
+            </View>
           ) : null}
 
           {exportMessage ? (
             <View style={styles.exportMsg}>
               <Ionicons name="checkmark-circle" size={14} color="#1f7a3f" />
               <AppText variant="caption" tone="success">{exportMessage}</AppText>
+            </View>
+          ) : null}
+
+          {exportError ? (
+            <View style={[styles.exportMsg, styles.exportErr]}>
+              <Ionicons name="alert-circle" size={14} color="#b5332a" />
+              <AppText variant="caption" tone="danger">{exportError}</AppText>
             </View>
           ) : null}
         </Card>
@@ -215,19 +221,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 20,
   },
-  previewBox: {
-    maxHeight: 160,
-    backgroundColor: "#f4f0e6",
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ddd3be",
-  },
-  previewText: {
-    fontSize: 11,
-    fontFamily: "monospace",
-    color: "#4a4235",
-    lineHeight: 16,
+  exportErr: {
+    backgroundColor: "#fdf0ef",
   },
   exportMsg: {
     flexDirection: "row",
