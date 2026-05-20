@@ -75,7 +75,7 @@ export default function ReportsScreen() {
     if (activeConflict) {
       const initial: Record<string, string> = {};
       for (const f of activeConflict.fields) {
-        initial[f.key] = f.localValue;
+        initial[f.field] = String(f.localValue ?? "");
       }
       setConflictChoices(initial);
     }
@@ -114,7 +114,12 @@ export default function ReportsScreen() {
   // SCRUM-40: Resolve a sync conflict
   async function handleResolveConflict() {
     if (!activeConflict) return;
-    await resolveConflict(activeConflict.id, conflictChoices);
+    const sources: Record<string, "local" | "remote" | "edited"> = {};
+    for (const f of activeConflict.fields) {
+      const choice = conflictChoices[f.field];
+      sources[f.field] = choice === String(f.localValue ?? "") ? "local" : choice === String(f.remoteValue ?? "") ? "remote" : "edited";
+    }
+    await resolveConflict(activeConflict.id, conflictChoices, sources);
     setMessage("Conflict resolved. Report submitted successfully.");
   }
 
@@ -248,46 +253,50 @@ export default function ReportsScreen() {
           </View>
           <AppText variant="caption" tone="muted">{t("conflict.subtitle", language)}</AppText>
 
-          {activeConflict.fields.map((field) => (
-            <View key={field.key} style={styles.conflictField}>
-              <AppText variant="label" tone="muted" style={styles.conflictFieldKey}>{field.key}</AppText>
-              <View style={styles.conflictChips}>
-                <Pressable
-                  style={[
-                    styles.conflictChip,
-                    conflictChoices[field.key] === field.localValue && styles.conflictChipActive,
-                  ]}
-                  onPress={() => setConflictChoices((c) => ({ ...c, [field.key]: field.localValue }))}
-                >
-                  <AppText
-                    variant="caption"
-                    style={conflictChoices[field.key] === field.localValue ? styles.conflictChipTextActive : styles.conflictChipText}
+          {activeConflict.fields.map((field) => {
+            const localStr = String(field.localValue ?? "");
+            const remoteStr = String(field.remoteValue ?? "");
+            return (
+              <View key={field.field} style={styles.conflictField}>
+                <AppText variant="label" tone="muted" style={styles.conflictFieldKey}>{field.field}</AppText>
+                <View style={styles.conflictChips}>
+                  <Pressable
+                    style={[
+                      styles.conflictChip,
+                      conflictChoices[field.field] === localStr && styles.conflictChipActive,
+                    ]}
+                    onPress={() => setConflictChoices((c) => ({ ...c, [field.field]: localStr }))}
                   >
-                    {t("conflict.local", language)}
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  style={[
-                    styles.conflictChip,
-                    conflictChoices[field.key] === field.serverValue && styles.conflictChipActive,
-                  ]}
-                  onPress={() => setConflictChoices((c) => ({ ...c, [field.key]: field.serverValue }))}
-                >
-                  <AppText
-                    variant="caption"
-                    style={conflictChoices[field.key] === field.serverValue ? styles.conflictChipTextActive : styles.conflictChipText}
+                    <AppText
+                      variant="caption"
+                      style={conflictChoices[field.field] === localStr ? styles.conflictChipTextActive : styles.conflictChipText}
+                    >
+                      {t("conflict.local", language)}
+                    </AppText>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.conflictChip,
+                      conflictChoices[field.field] === remoteStr && styles.conflictChipActive,
+                    ]}
+                    onPress={() => setConflictChoices((c) => ({ ...c, [field.field]: remoteStr }))}
                   >
-                    {t("conflict.server", language)}
+                    <AppText
+                      variant="caption"
+                      style={conflictChoices[field.field] === remoteStr ? styles.conflictChipTextActive : styles.conflictChipText}
+                    >
+                      {t("conflict.server", language)}
+                    </AppText>
+                  </Pressable>
+                </View>
+                {conflictChoices[field.field] != null && (
+                  <AppText variant="caption" tone="muted" style={styles.conflictPreview}>
+                    {conflictChoices[field.field]}
                   </AppText>
-                </Pressable>
+                )}
               </View>
-              {conflictChoices[field.key] != null && (
-                <AppText variant="caption" tone="muted" style={styles.conflictPreview}>
-                  {conflictChoices[field.key]}
-                </AppText>
-              )}
-            </View>
-          ))}
+            );
+          })}
 
           <PrimaryButton label={t("conflict.resolve", language)} onPress={handleResolveConflict} />
         </Card>

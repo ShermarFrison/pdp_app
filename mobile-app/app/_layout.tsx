@@ -21,7 +21,11 @@ function RootNavigator() {
     );
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="conflicts/[id]" options={{ presentation: "modal", title: "Resolve conflict", headerShown: true }} />
+    </Stack>
+  );
 }
 
 export default function Layout() {
