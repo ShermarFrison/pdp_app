@@ -48,7 +48,7 @@ describe("evidence + report submission integration", () => {
 
   it("attaches evidence, submits report, acks both with audit entries", async () => {
     let api!: ReturnType<typeof useApp>;
-    let latest: ReturnType<typeof useApp>;
+    let latest!: ReturnType<typeof useApp>;
     render(
       <AppProvider>
         <Harness onReady={(a) => { latest = a; api = a; }} />
