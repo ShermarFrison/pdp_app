@@ -272,7 +272,7 @@ Steps:
 
 Expected UI: Navigates to the Tasks tab and opens the referenced task's detail screen; the regulation item is marked read (its unread dot disappears) when the user returns to the feed.
 Expected audit events: `regulation.opened` with the feed item id and the task id.
-Result: ____
+Result: BLOCKED — no device available; navigation + unread-dot UI requires device. Deep-link logic covered by __tests__/regulation-link.test.tsx.
 
 ---
 
