@@ -187,10 +187,8 @@ export type AppState = {
   evidenceAttachments: EvidenceAttachment[];
   regulationChanges: RegulationChange[];
   helpTickets: HelpTicket[];
-  syncQueue: SyncQueueItem[];
   isOnline: boolean;
   ocrExtractions: OcrExtraction[];
-  syncConflicts: SyncConflict[];
   advisors: Advisor[];
   language: AppLanguage;
 };
