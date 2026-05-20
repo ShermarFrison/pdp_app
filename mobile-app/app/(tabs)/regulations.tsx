@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
 
 import { AppText } from "@/components/AppText";
 import { Badge } from "@/components/Badge";
@@ -12,7 +13,7 @@ import { t } from "@/lib/i18n";
 import { deriveTasks } from "@/lib/tasks";
 
 export default function RegulationsScreen() {
-  const { regulationChanges, markRegulationRead, farmProfile, language } = useApp();
+  const { regulationChanges, markRegulationRead, openRegulation, farmProfile, language } = useApp();
   const tasks = deriveTasks(farmProfile, language);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -28,13 +29,6 @@ export default function RegulationsScreen() {
         await markRegulationRead(regulationId);
       }
     }
-  }
-
-  function getRelatedTaskTitles(taskIds: string[]) {
-    return taskIds
-      .map((tid) => tasks.find((t) => t.id === tid))
-      .filter(Boolean)
-      .map((t) => t!.title);
   }
 
   return (
@@ -57,9 +51,8 @@ export default function RegulationsScreen() {
           </View>
         </Card>
       ) : (
-        regulationChanges.map((reg, index) => {
+        regulationChanges.map((reg) => {
           const expanded = expandedId === reg.id;
-          const relatedTasks = getRelatedTaskTitles(reg.relatedTaskIds);
 
           return (
             <Pressable key={reg.id} onPress={() => handlePress(reg.id)}>
@@ -94,21 +87,43 @@ export default function RegulationsScreen() {
                       {reg.summary}
                     </AppText>
 
-                    {relatedTasks.length > 0 && (
+                    {reg.relatedTaskIds.length > 0 && (
                       <View style={styles.relatedSection}>
                         <View style={styles.relatedHeader}>
                           <Ionicons name="link-outline" size={14} color="#3f6a52" />
-                          <AppText variant="label" tone="accent">{t("regulations.impacted_tasks", language)}</AppText>
+                          <AppText variant="label" tone="accent">
+                            {t("regulations.impacted_tasks", language)}
+                          </AppText>
                         </View>
-                        {relatedTasks.map((title) => (
-                          <View key={title} style={styles.relatedTask}>
-                            <Ionicons name="checkbox-outline" size={13} color="#3f6a52" />
-                            <AppText variant="caption" tone="accent">{title}</AppText>
-                          </View>
-                        ))}
-                        <AppText variant="caption" tone="muted">
-                          Go to Dashboard to view full task details and guidance.
-                        </AppText>
+                        {reg.relatedTaskIds.map((taskId) => {
+                          const taskInfo = tasks.find((entry) => entry.id === taskId);
+                          const title = taskInfo?.title ?? taskId;
+                          const href = taskInfo ? `/tasks/${taskId}` : `/guidance/${taskId}`;
+                          return (
+                            <Link
+                              key={taskId}
+                              href={href as any}
+                              asChild
+                              onPress={() =>
+                                openRegulation(reg.id, {
+                                  kind: taskInfo ? "task" : "guidance",
+                                  id: taskId,
+                                })
+                              }
+                            >
+                              <Pressable
+                                style={styles.relatedTask}
+                                testID={`reg-link-${reg.id}-${taskId}`}
+                              >
+                                <Ionicons name="checkbox-outline" size={13} color="#3f6a52" />
+                                <AppText variant="caption" tone="accent">
+                                  {title}
+                                </AppText>
+                                <Ionicons name="chevron-forward" size={13} color="#3f6a52" />
+                              </Pressable>
+                            </Link>
+                          );
+                        })}
                       </View>
                     )}
                   </View>
