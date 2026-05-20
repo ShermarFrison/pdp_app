@@ -212,6 +212,35 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!isHydrated) return;
+    for (const r of state.reports) {
+      if (r.submissionState !== "pending") continue;
+      const pending = observeSubmission(syncQueue, r.id);
+      if (!pending) continue;
+      pending.then(({ submissionState }) => {
+        setState((current) => ({
+          ...current,
+          reports: current.reports.map((x) =>
+            x.id === r.id
+              ? {
+                  ...x,
+                  submissionState,
+                  status: submissionState === "acknowledged" ? "submitted" : x.status,
+                  submittedAt: submissionState === "acknowledged" ? new Date().toISOString() : x.submittedAt,
+                }
+              : x,
+          ),
+        }));
+        if (submissionState === "acknowledged") {
+          void appendLog("report.submit_acknowledged", `Report ${r.id} acknowledged by remote.`);
+        }
+      });
+    }
+    // intentionally one-shot on hydration
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
     const sub = RNAppState.addEventListener("change", (next) => {
       if (next === "active") void syncQueue.drain(syncClient);
     });
@@ -315,22 +344,40 @@ export function AppProvider({ children }: PropsWithChildren) {
 
     setState((current) => ({
       ...current,
-      reports: current.reports.map((r) => (r.id === reportId ? { ...r, ...updates } : r)),
+      reports: current.reports.map((r) =>
+        r.id === reportId
+          ? { ...r, ...updates, submissionState: "pending", localVersion: (r.localVersion ?? 0) + 1 }
+          : r,
+      ),
     }));
+    await appendLog("report.submit", `Submitted report ${reportId} (queued for acknowledgement).`);
 
-    await syncQueue.enqueue({
-      kind: "report",
-      op: "submit",
-      entityId: reportId,
-      payload: { ...merged, status: "submitted", submittedAt: new Date().toISOString() },
-      baseVersion: 0,
+    void submitReportViaQueue(syncQueue, {
+      report: merged,
+      updates,
+      onState: (s) => {
+        if (s === "in-flight" || s === "pending") return;
+        setState((current) => ({
+          ...current,
+          reports: current.reports.map((r) =>
+            r.id === reportId
+              ? {
+                  ...r,
+                  submissionState: s,
+                  status: s === "acknowledged" ? "submitted" : r.status,
+                  submittedAt: s === "acknowledged" ? new Date().toISOString() : r.submittedAt,
+                }
+              : r,
+          ),
+        }));
+        if (s === "acknowledged") {
+          void appendLog("report.submit_acknowledged", `Report ${reportId} acknowledged by remote.`);
+        }
+      },
     });
 
     if (state.isOnline) {
-      await appendLog("report.submit", `Submitted report ${reportId}.`);
       void syncQueue.drain(syncClient);
-    } else {
-      await appendLog("report.draft_save", `Report ${reportId} queued for submission when online.`);
     }
     return { ok: true };
   }
