@@ -1,0 +1,62 @@
+[
+  {
+    "id": "buffer-strips",
+    "titleKey": "task.buffer_strips.title",
+    "guidanceKey": "task.buffer_strips.guidance",
+    "whatToDoKey": "task.buffer_strips.what_to_do",
+    "penaltyKey": "task.buffer_strips.penalty",
+    "source": "Baseline CAP requirement",
+    "riskLevel": "medium",
+    "dueDate": "2026-04-15"
+  },
+  {
+    "id": "soil-cover",
+    "titleKey": "task.soil_cover.title",
+    "guidanceKey": "task.soil_cover.guidance",
+    "whatToDoKey": "task.soil_cover.what_to_do",
+    "penaltyKey": "task.soil_cover.penalty",
+    "source": "Large holding rule",
+    "riskLevel": "high",
+    "dueDate": "2026-03-20"
+  },
+  {
+    "id": "manure-log",
+    "titleKey": "task.manure_log.title",
+    "guidanceKey": "task.manure_log.guidance",
+    "whatToDoKey": "task.manure_log.what_to_do",
+    "penaltyKey": "task.manure_log.penalty",
+    "source": "Livestock-specific rule",
+    "riskLevel": "high",
+    "dueDate": "2026-03-18"
+  },
+  {
+    "id": "organic-record",
+    "titleKey": "task.organic_record.title",
+    "guidanceKey": "task.organic_record.guidance",
+    "whatToDoKey": "task.organic_record.what_to_do",
+    "penaltyKey": "task.organic_record.penalty",
+    "source": "Organic certification scheme",
+    "riskLevel": "medium",
+    "dueDate": "2026-05-01"
+  },
+  {
+    "id": "nitrate-plan",
+    "titleKey": "task.nitrate_plan.title",
+    "guidanceKey": "task.nitrate_plan.guidance",
+    "whatToDoKey": "task.nitrate_plan.what_to_do",
+    "penaltyKey": "task.nitrate_plan.penalty",
+    "source": "Nitrate Vulnerable Zone (NVZ) rule",
+    "riskLevel": "high",
+    "dueDate": "2026-03-01"
+  },
+  {
+    "id": "crop-rotation-plan",
+    "titleKey": "task.crop_rotation_plan.title",
+    "guidanceKey": "task.crop_rotation_plan.guidance",
+    "whatToDoKey": "task.crop_rotation_plan.what_to_do",
+    "penaltyKey": "task.crop_rotation_plan.penalty",
+    "source": "GAEC 7",
+    "riskLevel": "medium",
+    "dueDate": "2026-04-30"
+  }
+]

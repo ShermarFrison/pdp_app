@@ -13,6 +13,8 @@ export type FarmProfile = {
   hectares: string;
   farmingType: "Arable" | "Dairy" | "Mixed" | "";
   livestockCount: string;
+  organicCertified?: boolean;
+  inNitrateZone?: boolean;
   lastSyncedAt?: string;
   localVersion: number;
   baseVersion: number;
@@ -147,7 +149,9 @@ export type AuditEventType =
   | "evidence.remove"
   | "ticket.submit"
   | "regulation.read"
+  | "regulation.opened"
   | "ocr.prefill"
+  | "ocr.applied"
   | "sync.conflict"
   | "sync.conflict_resolve"
   | "sync.conflict_resolved"
@@ -165,6 +169,23 @@ export type AuditLogEntry = {
 };
 
 export type OcrConfidence = "high" | "low";
+
+export type OcrFieldValue = { value: string; confidence: number };
+
+export type ExtractionResult = {
+  documentType: OcrFieldValue;
+  documentDate: OcrFieldValue;
+  referenceId: OcrFieldValue;
+  sourceFileName: string;
+};
+
+export type OcrFieldSource = "extracted" | "edited";
+
+export type OcrApplyMap = {
+  documentType: OcrFieldSource;
+  documentDate: OcrFieldSource;
+  referenceId: OcrFieldSource;
+};
 
 export type OcrExtraction = {
   documentType: string;

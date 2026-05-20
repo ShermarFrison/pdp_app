@@ -1,0 +1,27 @@
+[
+  { "taskId": "buffer-strips" },
+
+  { "taskId": "soil-cover", "when": [{ "field": "hectares", "op": ">=", "value": 20 }] },
+
+  { "taskId": "manure-log", "when": [{ "field": "farmingType", "op": "==", "value": "Dairy" }] },
+  { "taskId": "manure-log", "when": [{ "field": "livestockCount", "op": ">=", "value": 1 }] },
+  {
+    "taskId": "manure-log",
+    "when": [
+      { "field": "livestockCount", "op": ">=", "value": 20 },
+      { "field": "hectares", "op": "<=", "value": 50 }
+    ]
+  },
+
+  { "taskId": "organic-record", "when": [{ "field": "organicCertified", "op": "==", "value": true }] },
+
+  { "taskId": "nitrate-plan", "when": [{ "field": "inNitrateZone", "op": "==", "value": true }] },
+
+  {
+    "taskId": "crop-rotation-plan",
+    "when": [
+      { "field": "hectares", "op": ">=", "value": 10 },
+      { "field": "farmingType", "op": "in", "value": ["Arable", "Mixed"] }
+    ]
+  }
+]
