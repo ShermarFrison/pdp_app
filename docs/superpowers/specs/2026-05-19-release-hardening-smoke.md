@@ -156,7 +156,7 @@ Steps:
 
 Expected UI: Status badge transitions Draft → Submitted; a "Report submitted" toast appears; the report appears in the **Submitted** filter and not the **Draft** filter.
 Expected audit events: `report.draft.created`, `report.draft.saved`, `report.submitted`, each with the report id.
-Result: ____
+Result: BLOCKED — no device available; toast + filter UI require device. Underlying state transitions covered by __tests__/reports/submission.test.ts.
 
 ### 5.2 Simulated submit conflict → resolve
 Steps:
@@ -165,7 +165,7 @@ Steps:
 
 Expected UI: Submit fails initially with an inline banner "Report changed on server — review"; the resolver opens; after resolution, the report transitions to Submitted and the banner clears.
 Expected audit events: `report.submit.conflict`, `report.submit.resolved` (with `resolution: local`), then `report.submitted`.
-Result: ____
+Result: BLOCKED — no device available; banner + resolver UI require device. Conflict path covered by AppContext.integration tests.
 
 ### 5.3 Submitted state visible
 Steps:
@@ -173,7 +173,7 @@ Steps:
 
 Expected UI: Submitted reports remain visible under the **Submitted** filter across navigation; opening one shows a read-only view with no **Submit** button.
 Expected audit events: `report.viewed` with the report id.
-Result: ____
+Result: BLOCKED — no device available; navigation persistence requires device.
 
 ---
 
