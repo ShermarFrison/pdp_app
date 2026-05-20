@@ -344,8 +344,8 @@ Result: BLOCKED — no device available; depends on prior flows being executed o
 
 ## Overall sign-off
 
-- Tester: ____
-- Build under test (git SHA): ____
-- Device / OS: ____
-- All flows result: ____  (PASS only if every numbered step is PASS or BLOCKED with written justification)
-- Date completed: ____
+- Tester: The V (agentic worker, no device)
+- Build under test (git SHA): 440745a8ddb0b9f40f51c627291bdaed0a7dffc3
+- Device / OS: N/A — no device or emulator available in this environment
+- All flows result: BLOCKED — every flow recorded BLOCKED with written justification; no FAILs; on-device smoke pass still required before release sign-off
+- Date completed: 2026-05-20
