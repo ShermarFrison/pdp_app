@@ -17,6 +17,9 @@ export const EMPTY_PROFILE: FarmProfile = {
   hectares: "",
   farmingType: "",
   livestockCount: "",
+  localVersion: 0,
+  baseVersion: 0,
+  syncStatus: "clean",
 };
 
 export const SEEDED_REPORTS: ComplianceReport[] = [
@@ -102,10 +105,8 @@ export const INITIAL_STATE: AppState = {
   evidenceAttachments: [],
   regulationChanges: SEEDED_REGULATIONS,
   helpTickets: [],
-  syncQueue: [],
   isOnline: true,
   ocrExtractions: [],
-  syncConflicts: [],
   advisors: [],
   language: DEFAULT_LANGUAGE,
 };
