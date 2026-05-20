@@ -227,7 +227,7 @@ Steps:
 
 Expected UI: List re-renders to only events whose timestamp falls in the range; the empty state appears if nothing matches.
 Expected audit events: `audit.filtered` with the from/to dates.
-Result: ____
+Result: BLOCKED — no device available; date range picker UI requires device.
 
 ### 7.2 Export CSV
 Steps:
@@ -235,7 +235,7 @@ Steps:
 
 Expected UI: OS share sheet opens; the file is named `audit-YYYY-MM-DD.csv`; sharing to Files saves a file whose first line is the CSV header row.
 Expected audit events: `audit.export` with `format: csv` and the row count.
-Result: ____
+Result: BLOCKED — no device available; OS share sheet requires device. CSV formatter/export covered by __tests__/audit/export.test.ts and __tests__/integration/notifications-export.test.ts.
 
 ### 7.3 Export JSON
 Steps:
@@ -243,7 +243,7 @@ Steps:
 
 Expected UI: OS share sheet opens; the file is named `audit-YYYY-MM-DD.json`; the file parses as a JSON array.
 Expected audit events: `audit.export` with `format: json` and the row count.
-Result: ____
+Result: BLOCKED — no device available; OS share sheet requires device. JSON formatter/export covered by __tests__/audit/export.test.ts.
 
 ---
 
