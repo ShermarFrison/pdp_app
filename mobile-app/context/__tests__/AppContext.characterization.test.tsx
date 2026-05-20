@@ -44,6 +44,5 @@ test("submitReport offline path enqueues an item and surfaces it via context", a
 
   expect(res.ok).toBe(true);
   expect(captured!.syncQueue.length).toBeGreaterThan(0);
-  const item = captured!.syncQueue[0] as any;
-  expect(item.entityId ?? item.payload?.reportId).toBe(draft.id);
+  expect(captured!.syncQueue[0].entityId).toBe(draft.id);
 });

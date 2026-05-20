@@ -1,4 +1,5 @@
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { AppState as RNAppState } from "react-native";
 
 import {
   DEFAULT_LANGUAGE,
@@ -11,7 +12,14 @@ import {
   SEEDED_REGULATIONS,
   SEEDED_REPORTS,
 } from "@/data/seed";
-import { loadState, saveState } from "@/lib/storage";
+import { loadState, migrateLegacySyncSlices, saveState } from "@/lib/storage";
+import {
+  createSyncQueue,
+  LocalSimulatedSyncClient,
+  type SyncClient,
+  type SyncQueueSnapshot,
+} from "@/lib/sync";
+import { validateFarmProfile } from "@/lib/validation/farmProfile";
 import {
   Advisor,
   AdvisorPermission,
@@ -19,8 +27,7 @@ import {
   AppState,
   AuditEventType,
   ComplianceReport,
-  ConflictField,
-  ConflictFieldKey,
+  ConflictResolutionSource,
   EvidenceAttachment,
   FarmProfile,
   HelpTicket,
@@ -31,10 +38,15 @@ import {
   User,
 } from "@/types";
 
-type LoginResult = {
-  ok: boolean;
-  error?: string;
-};
+type LoginResult = { ok: boolean; error?: string };
+
+export class ProfileValidationError extends Error {
+  errors: Partial<Record<keyof FarmProfile, string>>;
+  constructor(errors: Partial<Record<keyof FarmProfile, string>>) {
+    super("Profile validation failed");
+    this.errors = errors;
+  }
+}
 
 type AppContextValue = {
   isHydrated: boolean;
@@ -73,7 +85,11 @@ type AppContextValue = {
   markRegulationRead: (regulationId: string) => Promise<void>;
   submitHelpTicket: (category: string, message: string, screenshotUri?: string) => Promise<HelpTicket>;
   applyOcrExtraction: (reportId: string, extraction: OcrExtraction) => Promise<void>;
-  resolveConflict: (conflictId: string, resolutions: Partial<Record<ConflictFieldKey, string>>) => Promise<void>;
+  resolveConflict: (
+    conflictId: string,
+    merged: Record<string, unknown>,
+    fieldSources: Record<string, ConflictResolutionSource>,
+  ) => Promise<void>;
   inviteAdvisor: (email: string, permission: AdvisorPermission) => Promise<{ ok: boolean; error?: string }>;
   revokeAdvisor: (advisorId: string) => Promise<void>;
   setLanguage: (lang: AppLanguage) => void;
@@ -85,10 +101,16 @@ const AppContext = createContext<AppContextValue | null>(null);
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
-
 function confirmationCode() {
   return `TKT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
+
+const syncQueue = createSyncQueue({ now: () => Date.now(), random: () => Math.random() });
+const syncClient: SyncClient = new LocalSimulatedSyncClient({
+  seed: 1337,
+  conflictRate: 0.25,
+  transientRate: 0.05,
+});
 
 export function AppProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<AppState>({
@@ -102,45 +124,63 @@ export function AppProvider({ children }: PropsWithChildren) {
     evidenceAttachments: [],
     regulationChanges: SEEDED_REGULATIONS,
     helpTickets: [],
-    syncQueue: [],
     isOnline: true,
     ocrExtractions: [],
-    syncConflicts: [],
     advisors: [],
     language: DEFAULT_LANGUAGE,
   });
+  const [queueSnapshot, setQueueSnapshot] = useState<SyncQueueSnapshot>({ items: [], conflicts: [] });
   const [isHydrated, setIsHydrated] = useState(false);
+  const migrationLoggedRef = useRef(false);
+
+  useEffect(() => {
+    const unsubscribe = syncQueue.subscribe(setQueueSnapshot);
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     async function hydrate() {
+      const migration = await migrateLegacySyncSlices();
       const loaded = await loadState();
+      await syncQueue.hydrate();
       setState((prev) => ({
         ...prev,
         ...loaded,
+        farmProfile: { ...EMPTY_PROFILE, ...loaded.farmProfile },
         reminderOffsets: loaded.reminderOffsets ?? DEFAULT_REMINDER_OFFSETS,
         evidenceAttachments: loaded.evidenceAttachments ?? [],
         regulationChanges: loaded.regulationChanges ?? SEEDED_REGULATIONS,
         helpTickets: loaded.helpTickets ?? [],
-        syncQueue: loaded.syncQueue ?? [],
         isOnline: loaded.isOnline ?? true,
         ocrExtractions: loaded.ocrExtractions ?? [],
-        syncConflicts: loaded.syncConflicts ?? [],
         advisors: loaded.advisors ?? [],
         language: loaded.language ?? DEFAULT_LANGUAGE,
       }));
       setIsHydrated(true);
+      if (migration.kind === "migrated" && !migrationLoggedRef.current) {
+        migrationLoggedRef.current = true;
+        await appendLog(
+          "sync.migration_v1",
+          `Migrated ${migration.movedQueueItems} queue item(s) and ${migration.movedConflicts} conflict(s).`,
+        );
+      }
+      void syncQueue.drain(syncClient);
     }
-
     hydrate();
   }, []);
 
   useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
+    if (!isHydrated) return;
     saveState(state);
   }, [isHydrated, state]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const sub = RNAppState.addEventListener("change", (next) => {
+      if (next === "active") void syncQueue.drain(syncClient);
+    });
+    return () => sub.remove();
+  }, [isHydrated]);
 
   async function appendLog(type: AuditEventType, details: string, userEmail?: string) {
     setState((current) => ({
@@ -160,58 +200,54 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   async function login(email: string, password: string): Promise<LoginResult> {
     const normalizedEmail = email.trim().toLowerCase();
-
     if (normalizedEmail !== DEFAULT_USER.email || password !== DEFAULT_PASSWORD) {
-      return {
-        ok: false,
-        error: "Invalid credentials. Use farmer@pdp.test / harvest123.",
-      };
+      return { ok: false, error: "Invalid credentials. Use farmer@pdp.test / harvest123." };
     }
-
-    setState((current) => ({
-      ...current,
-      sessionUser: DEFAULT_USER,
-    }));
+    setState((current) => ({ ...current, sessionUser: DEFAULT_USER }));
     await appendLog("login", "Farmer session started.", DEFAULT_USER.email);
-
     return { ok: true };
   }
 
   async function logout() {
     const email = state.sessionUser?.email;
-    setState((current) => ({
-      ...current,
-      sessionUser: null,
-    }));
+    setState((current) => ({ ...current, sessionUser: null }));
     await appendLog("logout", "Farmer session cleared.", email);
   }
 
   async function saveProfile(profile: FarmProfile) {
-    setState((current) => ({
-      ...current,
-      farmProfile: { ...profile },
-    }));
+    const validation = validateFarmProfile(profile);
+    if (!validation.ok) throw new ProfileValidationError(validation.errors);
+
+    const next: FarmProfile = {
+      ...profile,
+      localVersion: profile.localVersion + 1,
+      syncStatus: "pending",
+    };
+    setState((current) => ({ ...current, farmProfile: next }));
     await appendLog("profile.save", "Farm profile saved locally.");
+    await syncQueue.enqueue({
+      kind: "profile",
+      op: "upsert",
+      entityId: "self",
+      payload: next,
+      baseVersion: next.baseVersion,
+    });
+    void syncQueue.drain(syncClient);
   }
 
   async function syncProfile() {
+    setState((current) => ({ ...current, farmProfile: { ...current.farmProfile, syncStatus: "syncing" } }));
+    await syncQueue.drain(syncClient);
     setState((current) => ({
       ...current,
-      farmProfile: {
-        ...current.farmProfile,
-        lastSyncedAt: new Date().toISOString(),
-      },
+      farmProfile: { ...current.farmProfile, lastSyncedAt: new Date().toISOString() },
     }));
-    await appendLog("profile.sync", "Farm profile synced to mocked backend.");
+    await appendLog("profile.sync", "Farm profile sync requested.");
   }
 
   async function duplicateReport(reportId: string) {
-    const source = state.reports.find((report) => report.id === reportId && report.status === "submitted");
-
-    if (!source) {
-      return null;
-    }
-
+    const source = state.reports.find((r) => r.id === reportId && r.status === "submitted");
+    if (!source) return null;
     const duplicated: ComplianceReport = {
       ...source,
       id: id("report"),
@@ -221,82 +257,45 @@ export function AppProvider({ children }: PropsWithChildren) {
       submittedAt: undefined,
       basedOnReportId: source.id,
     };
-
-    setState((current) => ({
-      ...current,
-      reports: [duplicated, ...current.reports],
-    }));
+    setState((current) => ({ ...current, reports: [duplicated, ...current.reports] }));
     await appendLog("report.duplicate", `Duplicated report ${source.id} into draft ${duplicated.id}.`);
-
     return duplicated;
   }
 
   function setReminders(enabled: boolean, daysBefore: number) {
-    setState((current) => ({
-      ...current,
-      remindersEnabled: enabled,
-      reminderDaysBefore: daysBefore,
-    }));
+    setState((current) => ({ ...current, remindersEnabled: enabled, reminderDaysBefore: daysBefore }));
   }
-
   function setReminderOffsets(offsets: number[]) {
-    setState((current) => ({
-      ...current,
-      reminderOffsets: offsets.sort((a, b) => b - a),
-    }));
+    setState((current) => ({ ...current, reminderOffsets: offsets.sort((a, b) => b - a) }));
   }
 
   async function submitReport(reportId: string, updates: Partial<ComplianceReport>) {
-    const existing = state.reports.find((report) => report.id === reportId);
-
-    if (!existing) {
-      return { ok: false, error: "Draft not found." };
-    }
-
+    const existing = state.reports.find((r) => r.id === reportId);
+    if (!existing) return { ok: false, error: "Draft not found." };
     const merged = { ...existing, ...updates };
-
     if (!merged.periodYear || !merged.inspectionDate || !merged.fieldSummary.trim()) {
-      return {
-        ok: false,
-        error: "Period year, inspection date, and field summary are required.",
-      };
-    }
-
-    if (!state.isOnline) {
-      setState((current) => ({
-        ...current,
-        reports: current.reports.map((report) =>
-          report.id === reportId ? { ...report, ...updates } : report,
-        ),
-        syncQueue: [
-          ...current.syncQueue,
-          {
-            id: id("sync"),
-            action: "report.submit",
-            payload: { reportId, ...updates },
-            createdAt: new Date().toISOString(),
-          },
-        ],
-      }));
-      await appendLog("report.draft_save", `Report ${reportId} queued for submission when online.`);
-      return { ok: true };
+      return { ok: false, error: "Period year, inspection date, and field summary are required." };
     }
 
     setState((current) => ({
       ...current,
-      reports: current.reports.map((report) =>
-        report.id === reportId
-          ? {
-              ...report,
-              ...updates,
-              status: "submitted",
-              submittedAt: new Date().toISOString(),
-            }
-          : report,
-      ),
+      reports: current.reports.map((r) => (r.id === reportId ? { ...r, ...updates } : r)),
     }));
-    await appendLog("report.submit", `Submitted report ${reportId}.`);
 
+    await syncQueue.enqueue({
+      kind: "report",
+      op: "submit",
+      entityId: reportId,
+      payload: { ...merged, status: "submitted", submittedAt: new Date().toISOString() },
+      baseVersion: 0,
+    });
+
+    if (state.isOnline) {
+      await appendLog("report.submit", `Submitted report ${reportId}.`);
+      void syncQueue.drain(syncClient);
+    } else {
+      await appendLog("report.draft_save", `Report ${reportId} queued for submission when online.`);
+    }
     return { ok: true };
   }
 
@@ -311,105 +310,38 @@ export function AppProvider({ children }: PropsWithChildren) {
       notes: "",
       status: "draft",
     };
-
-    setState((current) => ({
-      ...current,
-      reports: [newReport, ...current.reports],
-    }));
+    setState((current) => ({ ...current, reports: [newReport, ...current.reports] }));
     await appendLog("report.create", `Created new blank report ${newReport.id}.`);
-
     return newReport;
   }
 
   async function saveDraftOffline(reportId: string, updates: Partial<ComplianceReport>) {
     setState((current) => ({
       ...current,
-      reports: current.reports.map((report) =>
-        report.id === reportId ? { ...report, ...updates } : report,
-      ),
+      reports: current.reports.map((r) => (r.id === reportId ? { ...r, ...updates } : r)),
     }));
     await appendLog("report.draft_save", `Draft ${reportId} saved locally.`);
   }
 
-  // SCRUM-40: Sync queued reports with conflict detection
-  async function syncReports(): Promise<{ synced: number; failed: number; conflicts: number }> {
-    const queue = state.syncQueue;
-    let synced = 0;
-    let failed = 0;
-    const newConflicts: SyncConflict[] = [];
-    const conflictReportIds: string[] = [];
-    const submittedIds: string[] = [];
-
-    for (const item of queue) {
-      if (item.action === "report.submit") {
-        const report = state.reports.find((r) => r.id === item.payload.reportId);
-        if (report) {
-          const merged = { ...report, ...item.payload };
-          if (merged.fieldSummary || merged.notes) {
-            const fields: ConflictField[] = [];
-            if (merged.fieldSummary) {
-              fields.push({
-                key: "fieldSummary",
-                localValue: merged.fieldSummary,
-                serverValue: merged.fieldSummary + " [server revision]",
-              });
-            }
-            if (merged.notes) {
-              fields.push({
-                key: "notes",
-                localValue: merged.notes,
-                serverValue: merged.notes + " [server note]",
-              });
-            }
-            newConflicts.push({
-              id: id("conflict"),
-              reportId: item.payload.reportId,
-              fields,
-              detectedAt: new Date().toISOString(),
-            });
-            conflictReportIds.push(item.payload.reportId);
-          } else {
-            submittedIds.push(item.payload.reportId);
-            synced++;
-          }
-        } else {
-          failed++;
-        }
-      }
-    }
-
-    const now = new Date().toISOString();
+  async function syncReports() {
+    const before = queueSnapshot.items.length;
+    const result = await syncQueue.drain(syncClient);
+    const after = syncQueue.getSnapshot();
     setState((current) => ({
       ...current,
-      reports: current.reports.map((r) =>
-        submittedIds.includes(r.id)
-          ? { ...r, status: "submitted", submittedAt: now }
-          : r,
-      ),
-      syncConflicts: [
-        ...current.syncConflicts.filter((c) => !newConflicts.some((nc) => nc.reportId === c.reportId)),
-        ...newConflicts,
-      ],
-      syncQueue: current.syncQueue.filter((item) =>
-        conflictReportIds.includes(item.payload.reportId),
-      ),
+      reports: current.reports.map((r) => {
+        const okItem = before > 0 && !after.items.some((it) => it.entityId === r.id) && r.status === "draft";
+        return okItem ? { ...r, status: "submitted", submittedAt: new Date().toISOString() } : r;
+      }),
     }));
-
-    if (newConflicts.length > 0) {
-      await appendLog("sync.conflict", `${newConflicts.length} conflict(s) detected during sync.`);
-    }
-    if (synced > 0) {
-      await appendLog("report.sync", `Synced ${synced} queued report(s).${failed > 0 ? ` ${failed} failed.` : ""}`);
-    }
-
-    return { synced, failed, conflicts: newConflicts.length };
+    if (result.ok > 0) await appendLog("report.sync", `Synced ${result.ok} queued report(s).`);
+    if (result.conflicts > 0) await appendLog("sync.conflict", `${result.conflicts} conflict(s) detected during sync.`);
+    return { synced: result.ok, failed: result.permanent, conflicts: result.conflicts };
   }
 
   function setOnlineStatus(online: boolean) {
-    setState((current) => ({
-      ...current,
-      isOnline: online,
-    }));
+    setState((current) => ({ ...current, isOnline: online }));
+    if (online) void syncQueue.drain(syncClient);
   }
 
   async function addEvidence(
@@ -422,7 +354,6 @@ export function AppProvider({ children }: PropsWithChildren) {
     if (sizeBytes > MAX_EVIDENCE_SIZE_BYTES) {
       return { ok: false, error: `File exceeds the 10 MB size limit (${(sizeBytes / 1024 / 1024).toFixed(1)} MB).` };
     }
-
     const attachment: EvidenceAttachment = {
       id: id("evidence"),
       taskId,
@@ -432,13 +363,8 @@ export function AppProvider({ children }: PropsWithChildren) {
       sizeBytes,
       addedAt: new Date().toISOString(),
     };
-
-    setState((current) => ({
-      ...current,
-      evidenceAttachments: [...current.evidenceAttachments, attachment],
-    }));
+    setState((current) => ({ ...current, evidenceAttachments: [...current.evidenceAttachments, attachment] }));
     await appendLog("evidence.upload", `Uploaded ${type} "${fileName}" for task ${taskId}.`);
-
     return { ok: true };
   }
 
@@ -453,7 +379,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     }
   }
 
-  function getEvidenceForTask(taskId: string): EvidenceAttachment[] {
+  function getEvidenceForTask(taskId: string) {
     return state.evidenceAttachments.filter((e) => e.taskId === taskId);
   }
 
@@ -467,7 +393,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     await appendLog("regulation.read", `Marked regulation ${regulationId} as read.`);
   }
 
-  async function submitHelpTicket(category: string, message: string, screenshotUri?: string): Promise<HelpTicket> {
+  async function submitHelpTicket(category: string, message: string, screenshotUri?: string) {
     const ticket: HelpTicket = {
       id: id("ticket"),
       category,
@@ -477,65 +403,54 @@ export function AppProvider({ children }: PropsWithChildren) {
       createdAt: new Date().toISOString(),
       confirmationId: confirmationCode(),
     };
-
-    setState((current) => ({
-      ...current,
-      helpTickets: [ticket, ...current.helpTickets],
-    }));
+    setState((current) => ({ ...current, helpTickets: [ticket, ...current.helpTickets] }));
     await appendLog("ticket.submit", `Help ticket ${ticket.confirmationId} submitted: ${category}.`);
-
     return ticket;
   }
 
-  // SCRUM-38: Apply OCR extraction to a report
   async function applyOcrExtraction(reportId: string, extraction: OcrExtraction) {
     const withApplied: OcrExtraction = { ...extraction, appliedToReportId: reportId };
-    setState((current) => ({
-      ...current,
-      ocrExtractions: [...current.ocrExtractions, withApplied],
-    }));
+    setState((current) => ({ ...current, ocrExtractions: [...current.ocrExtractions, withApplied] }));
     await appendLog("ocr.prefill", `OCR extraction from "${extraction.sourceFileName}" applied to report ${reportId}.`);
   }
 
-  // SCRUM-40: Resolve a sync conflict
-  async function resolveConflict(conflictId: string, resolutions: Partial<Record<ConflictFieldKey, string>>) {
-    const conflict = state.syncConflicts.find((c) => c.id === conflictId);
+  async function resolveConflict(
+    conflictId: string,
+    merged: Record<string, unknown>,
+    fieldSources: Record<string, ConflictResolutionSource>,
+  ) {
+    const conflict = queueSnapshot.conflicts.find((c) => c.id === conflictId);
     if (!conflict) return;
 
-    const resolvedAt = new Date().toISOString();
-    setState((current) => ({
-      ...current,
-      reports: current.reports.map((r) =>
-        r.id === conflict.reportId
-          ? { ...r, ...(resolutions as Partial<ComplianceReport>), status: "submitted", submittedAt: resolvedAt }
-          : r,
-      ),
-      syncConflicts: current.syncConflicts.map((c) =>
-        c.id === conflictId
-          ? {
-              ...c,
-              fields: c.fields.map((f) => ({
-                ...f,
-                chosenValue: resolutions[f.key] ?? f.localValue,
-              })),
-              resolvedAt,
-            }
-          : c,
-      ),
-      syncQueue: current.syncQueue.filter((item) => item.payload.reportId !== conflict.reportId),
-    }));
-    await appendLog("sync.conflict_resolve", `Conflict ${conflictId} resolved for report ${conflict.reportId}.`);
+    if (conflict.kind === "report") {
+      setState((current) => ({
+        ...current,
+        reports: current.reports.map((r) =>
+          r.id === conflict.entityId
+            ? { ...r, ...(merged as Partial<ComplianceReport>), status: "submitted", submittedAt: new Date().toISOString() }
+            : r,
+        ),
+      }));
+    } else {
+      setState((current) => ({
+        ...current,
+        farmProfile: { ...current.farmProfile, ...(merged as Partial<FarmProfile>), syncStatus: "clean" },
+      }));
+    }
+
+    await syncQueue.resolveConflict(conflictId, merged, fieldSources);
+    await appendLog(
+      "sync.conflict_resolved",
+      `Resolved ${conflict.kind} conflict ${conflictId} (${Object.entries(fieldSources)
+        .map(([f, s]) => `${f}:${s}`)
+        .join(",")}).`,
+    );
   }
 
-  // SCRUM-43: Invite an advisor
-  async function inviteAdvisor(email: string, permission: AdvisorPermission): Promise<{ ok: boolean; error?: string }> {
-    if (!email.includes("@")) {
-      return { ok: false, error: "Invalid email address." };
-    }
+  async function inviteAdvisor(email: string, permission: AdvisorPermission) {
+    if (!email.includes("@")) return { ok: false, error: "Invalid email address." };
     const duplicate = state.advisors.find((a) => a.email === email && a.active);
-    if (duplicate) {
-      return { ok: false, error: "This advisor is already active." };
-    }
+    if (duplicate) return { ok: false, error: "This advisor is already active." };
     const advisor: Advisor = {
       id: id("advisor"),
       email,
@@ -543,15 +458,11 @@ export function AppProvider({ children }: PropsWithChildren) {
       invitedAt: new Date().toISOString(),
       active: true,
     };
-    setState((current) => ({
-      ...current,
-      advisors: [...current.advisors, advisor],
-    }));
+    setState((current) => ({ ...current, advisors: [...current.advisors, advisor] }));
     await appendLog("advisor.invite", `Invited advisor ${email} with ${permission} access.`);
     return { ok: true };
   }
 
-  // SCRUM-43: Revoke advisor access
   async function revokeAdvisor(advisorId: string) {
     const advisor = state.advisors.find((a) => a.id === advisorId);
     setState((current) => ({
@@ -560,27 +471,21 @@ export function AppProvider({ children }: PropsWithChildren) {
         a.id === advisorId ? { ...a, active: false, revokedAt: new Date().toISOString() } : a,
       ),
     }));
-    if (advisor) {
-      await appendLog("advisor.revoke", `Revoked advisor access for ${advisor.email}.`);
-    }
+    if (advisor) await appendLog("advisor.revoke", `Revoked advisor access for ${advisor.email}.`);
   }
 
-  // SCRUM-44: Set interface language
   function setLanguage(lang: AppLanguage) {
     setState((current) => ({ ...current, language: lang }));
   }
 
-  // SCRUM-47: Export audit log
-  async function exportAuditLog(fromDate: string, toDate: string, format: "csv" | "json"): Promise<string> {
+  async function exportAuditLog(fromDate: string, toDate: string, format: "csv" | "json") {
     const from = new Date(fromDate);
     const to = new Date(toDate);
     to.setHours(23, 59, 59, 999);
-
     const filtered = state.auditLogs.filter((entry) => {
       const ts = new Date(entry.timestamp);
       return ts >= from && ts <= to;
     });
-
     let content: string;
     if (format === "csv") {
       const header = "id,type,userEmail,timestamp,details";
@@ -591,7 +496,6 @@ export function AppProvider({ children }: PropsWithChildren) {
     } else {
       content = JSON.stringify(filtered, null, 2);
     }
-
     await appendLog(
       "audit.export",
       `Exported ${filtered.length} audit log entries (${format.toUpperCase()}) from ${fromDate} to ${toDate}.`,
@@ -599,63 +503,57 @@ export function AppProvider({ children }: PropsWithChildren) {
     return content;
   }
 
-  return (
-    <AppContext.Provider
-      value={{
-        isHydrated,
-        sessionUser: state.sessionUser,
-        farmProfile: state.farmProfile,
-        reports: state.reports,
-        auditLogs: state.auditLogs,
-        remindersEnabled: state.remindersEnabled,
-        reminderDaysBefore: state.reminderDaysBefore,
-        reminderOffsets: state.reminderOffsets,
-        evidenceAttachments: state.evidenceAttachments,
-        regulationChanges: state.regulationChanges,
-        helpTickets: state.helpTickets,
-        syncQueue: state.syncQueue,
-        isOnline: state.isOnline,
-        ocrExtractions: state.ocrExtractions,
-        syncConflicts: state.syncConflicts,
-        advisors: state.advisors,
-        language: state.language,
-
-        setReminders,
-        setReminderOffsets,
-        login,
-        logout,
-        saveProfile,
-        syncProfile,
-        duplicateReport,
-        submitReport,
-        createNewReport,
-        saveDraftOffline,
-        syncReports,
-        setOnlineStatus,
-        addEvidence,
-        removeEvidence,
-        getEvidenceForTask,
-        markRegulationRead,
-        submitHelpTicket,
-        applyOcrExtraction,
-        resolveConflict,
-        inviteAdvisor,
-        revokeAdvisor,
-        setLanguage,
-        exportAuditLog,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+  const value = useMemo<AppContextValue>(
+    () => ({
+      isHydrated,
+      sessionUser: state.sessionUser,
+      farmProfile: state.farmProfile,
+      reports: state.reports,
+      auditLogs: state.auditLogs,
+      remindersEnabled: state.remindersEnabled,
+      reminderDaysBefore: state.reminderDaysBefore,
+      reminderOffsets: state.reminderOffsets,
+      evidenceAttachments: state.evidenceAttachments,
+      regulationChanges: state.regulationChanges,
+      helpTickets: state.helpTickets,
+      syncQueue: queueSnapshot.items,
+      isOnline: state.isOnline,
+      ocrExtractions: state.ocrExtractions,
+      syncConflicts: queueSnapshot.conflicts,
+      advisors: state.advisors,
+      language: state.language,
+      setReminders,
+      setReminderOffsets,
+      login,
+      logout,
+      saveProfile,
+      syncProfile,
+      duplicateReport,
+      submitReport,
+      createNewReport,
+      saveDraftOffline,
+      syncReports,
+      setOnlineStatus,
+      addEvidence,
+      removeEvidence,
+      getEvidenceForTask,
+      markRegulationRead,
+      submitHelpTicket,
+      applyOcrExtraction,
+      resolveConflict,
+      inviteAdvisor,
+      revokeAdvisor,
+      setLanguage,
+      exportAuditLog,
+    }),
+    [isHydrated, state, queueSnapshot],
   );
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {
   const context = useContext(AppContext);
-
-  if (!context) {
-    throw new Error("useApp must be used within AppProvider");
-  }
-
+  if (!context) throw new Error("useApp must be used within AppProvider");
   return context;
 }
