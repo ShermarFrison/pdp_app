@@ -41,6 +41,17 @@ Owner: <name>
 Notes: <free text>
 ```
 
+### F-99 (informational)
+```
+ID: F-99 (informational)
+Flow: post-fix unit+integration baseline
+Summary: Tests: 96 passed, 96 total (Test Suites: 24 passed, 24 total)
+Severity: minor
+Decision: accepted-residual
+Owner: The V
+Notes: Final baseline after SP5 fix budget consumed. No fix slots were used — all smoke flows were BLOCKED on device availability (not FAIL), so no `fix-in-sp5` findings arose. Existing 24/96 baseline preserved.
+```
+
 ### F-01 (informational)
 ```
 ID: F-01 (informational)
