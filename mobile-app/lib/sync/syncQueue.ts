@@ -140,10 +140,13 @@ export function createSyncQueue(deps: SyncQueueDeps): SyncQueue {
 
       let result: SyncResult;
       try {
-        result =
-          current.kind === "report"
-            ? await client.pushReport(inflight)
-            : await client.pushProfile(inflight);
+        if (current.kind === "report") {
+          result = await client.pushReport(inflight);
+        } else if (current.kind === "evidence" && typeof client.pushEvidence === "function") {
+          result = await client.pushEvidence(inflight);
+        } else {
+          result = await client.pushProfile(inflight);
+        }
       } catch (err) {
         result = { kind: "transient", reason: err instanceof Error ? err.message : "unknown" };
       }

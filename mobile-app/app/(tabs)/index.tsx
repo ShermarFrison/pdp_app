@@ -36,20 +36,6 @@ const riskLabel: Record<RiskLevel, string> = {
 type FilterTab = "All" | "Overdue" | "Not started" | "Done";
 const FILTER_TABS: FilterTab[] = ["All", "Overdue", "Not started", "Done"];
 
-// Simulated file picker for evidence uploads (SCRUM-37)
-function simulateFilePick(): Promise<{ uri: string; fileName: string; type: "photo" | "pdf"; sizeBytes: number } | null> {
-  return new Promise((resolve) => {
-    // Simulate picking a file with random attributes
-    const isPhoto = Math.random() > 0.3;
-    const sizeBytes = Math.floor(Math.random() * 5 * 1024 * 1024) + 100000; // 100KB - 5MB
-    resolve({
-      uri: `file:///mock/${Date.now()}.${isPhoto ? "jpg" : "pdf"}`,
-      fileName: isPhoto ? `evidence_photo_${Date.now()}.jpg` : `compliance_doc_${Date.now()}.pdf`,
-      type: isPhoto ? "photo" : "pdf",
-      sizeBytes,
-    });
-  });
-}
 
 export default function DashboardScreen() {
   const { sessionUser, farmProfile, logout, reports, addEvidence, removeEvidence, getEvidenceForTask, language } = useApp();
@@ -67,20 +53,14 @@ export default function DashboardScreen() {
     router.replace("/login");
   }
 
-  // SCRUM-37: Handle evidence upload
+  // SCRUM-37: Handle evidence upload (SP2: routes through picker + sync queue).
   async function handleUploadEvidence(taskId: string) {
     try {
-      const file = await simulateFilePick();
-      if (!file) {
-        setUploadMessage((prev) => ({ ...prev, [taskId]: "File selection cancelled." }));
-        return;
-      }
-
-      const result = await addEvidence(taskId, file.uri, file.fileName, file.type, file.sizeBytes);
+      const result = await addEvidence(taskId, { kind: "photo" });
       if (!result.ok) {
         setUploadMessage((prev) => ({ ...prev, [taskId]: result.error ?? "Upload failed." }));
       } else {
-        setUploadMessage((prev) => ({ ...prev, [taskId]: `Uploaded "${file.fileName}" successfully.` }));
+        setUploadMessage((prev) => ({ ...prev, [taskId]: `Photo selected and queued for upload.` }));
       }
     } catch {
       setUploadMessage((prev) => ({ ...prev, [taskId]: "Upload failed. Please try again." }));

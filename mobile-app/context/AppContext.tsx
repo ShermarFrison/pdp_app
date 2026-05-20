@@ -19,6 +19,9 @@ import {
   type SyncClient,
   type SyncQueueSnapshot,
 } from "@/lib/sync";
+import { copyIntoAppDocs, remove as removeFromDocs } from "@/lib/evidence/storage";
+import { pickPhoto, pickDocument, type PickResult } from "@/lib/evidence/picker";
+import { submitReport as submitReportViaQueue, observeSubmission } from "@/lib/reports";
 import { validateFarmProfile } from "@/lib/validation/farmProfile";
 import {
   Advisor,
@@ -79,7 +82,9 @@ type AppContextValue = {
   saveDraftOffline: (reportId: string, updates: Partial<ComplianceReport>) => Promise<void>;
   syncReports: () => Promise<{ synced: number; failed: number; conflicts: number }>;
   setOnlineStatus: (online: boolean) => void;
-  addEvidence: (taskId: string, uri: string, fileName: string, type: "photo" | "pdf", sizeBytes: number) => Promise<{ ok: boolean; error?: string }>;
+  addEvidence: (taskId: string, source: { kind: "photo" } | { kind: "pdf" }) => Promise<{ ok: boolean; error?: string }>;
+  retryEvidence: (evidenceId: string) => Promise<void>;
+  retryAllFailedEvidence: () => Promise<void>;
   removeEvidence: (evidenceId: string) => Promise<void>;
   getEvidenceForTask: (taskId: string) => EvidenceAttachment[];
   markRegulationRead: (regulationId: string) => Promise<void>;
@@ -135,6 +140,37 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const unsubscribe = syncQueue.subscribe(setQueueSnapshot);
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = syncQueue.subscribe((snapshot) => {
+      setState((current) => {
+        let changed = false;
+        const nextEvidence = current.evidenceAttachments.map((e) => {
+          if (!e.queueItemId) return e;
+          const q = snapshot.items.find((i) => i.id === e.queueItemId);
+          let status: EvidenceAttachment["uploadStatus"];
+          if (!q) {
+            status = "ok";
+          } else {
+            switch (q.status) {
+              case "pending": status = "pending"; break;
+              case "in-flight": status = "in-flight"; break;
+              case "ok": status = "ok"; break;
+              case "error":
+              case "conflict": status = "error"; break;
+              default: status = e.uploadStatus;
+            }
+          }
+          const nextError = q?.lastError;
+          if (status === e.uploadStatus && nextError === e.uploadError) return e;
+          changed = true;
+          return { ...e, uploadStatus: status, uploadError: nextError };
+        });
+        return changed ? { ...current, evidenceAttachments: nextEvidence } : current;
+      });
+    });
     return unsubscribe;
   }, []);
 
@@ -346,36 +382,107 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   async function addEvidence(
     taskId: string,
-    uri: string,
-    fileName: string,
-    type: "photo" | "pdf",
-    sizeBytes: number,
+    source: { kind: "photo" } | { kind: "pdf" },
   ): Promise<{ ok: boolean; error?: string }> {
-    if (sizeBytes > MAX_EVIDENCE_SIZE_BYTES) {
-      return { ok: false, error: `File exceeds the 10 MB size limit (${(sizeBytes / 1024 / 1024).toFixed(1)} MB).` };
+    const pickRes: PickResult = source.kind === "photo" ? await pickPhoto() : await pickDocument();
+    if (!pickRes.ok) {
+      if (pickRes.reason === "cancelled") return { ok: true };
+      if (pickRes.reason === "permission_denied") {
+        return { ok: false, error: "Permission to access media was denied." };
+      }
+      return { ok: false, error: pickRes.message ?? "Could not open picker." };
     }
+    const asset = pickRes.asset;
+    if (asset.sizeBytes > MAX_EVIDENCE_SIZE_BYTES) {
+      return { ok: false, error: `File exceeds the 10 MB size limit (${(asset.sizeBytes / 1024 / 1024).toFixed(1)} MB).` };
+    }
+
+    const evidenceId = id("evidence");
+    const ext = asset.fileName.includes(".") ? asset.fileName.split(".").pop()! : (source.kind === "photo" ? "jpg" : "pdf");
+
+    let persistentUri: string;
+    try {
+      persistentUri = await copyIntoAppDocs(asset.uri, evidenceId, ext);
+    } catch (e) {
+      return { ok: false, error: `Failed to save file locally: ${(e as Error).message}` };
+    }
+
+    const queueItem = await syncQueue.enqueue({
+      kind: "evidence",
+      op: "upload",
+      entityId: evidenceId,
+      payload: {
+        evidenceId,
+        taskId,
+        persistentUri,
+        fileName: asset.fileName,
+        sizeBytes: asset.sizeBytes,
+      },
+      baseVersion: 0,
+    });
+
     const attachment: EvidenceAttachment = {
-      id: id("evidence"),
+      id: evidenceId,
       taskId,
-      uri,
-      fileName,
-      type,
-      sizeBytes,
+      uri: persistentUri,
+      fileName: asset.fileName,
+      type: source.kind,
+      sizeBytes: asset.sizeBytes,
       addedAt: new Date().toISOString(),
+      uploadStatus: "pending",
+      queueItemId: queueItem.id,
     };
-    setState((current) => ({ ...current, evidenceAttachments: [...current.evidenceAttachments, attachment] }));
-    await appendLog("evidence.upload", `Uploaded ${type} "${fileName}" for task ${taskId}.`);
+
+    setState((current) => ({
+      ...current,
+      evidenceAttachments: [...current.evidenceAttachments, attachment],
+    }));
+    await appendLog("evidence.upload", `Uploaded ${source.kind} "${asset.fileName}" for task ${taskId}.`);
     return { ok: true };
   }
 
   async function removeEvidence(evidenceId: string) {
     const attachment = state.evidenceAttachments.find((e) => e.id === evidenceId);
+    if (attachment) {
+      try { await removeFromDocs(attachment.uri); } catch { /* idempotent */ }
+    }
     setState((current) => ({
       ...current,
       evidenceAttachments: current.evidenceAttachments.filter((e) => e.id !== evidenceId),
     }));
     if (attachment) {
       await appendLog("evidence.remove", `Removed "${attachment.fileName}" from task ${attachment.taskId}.`);
+    }
+  }
+
+  async function retryEvidence(evidenceId: string) {
+    const att = state.evidenceAttachments.find((e) => e.id === evidenceId);
+    if (!att) return;
+    const newItem = await syncQueue.enqueue({
+      kind: "evidence",
+      op: "upload",
+      entityId: att.id,
+      payload: {
+        evidenceId: att.id,
+        taskId: att.taskId,
+        persistentUri: att.uri,
+        fileName: att.fileName,
+        sizeBytes: att.sizeBytes,
+      },
+      baseVersion: 0,
+    });
+    setState((current) => ({
+      ...current,
+      evidenceAttachments: current.evidenceAttachments.map((e) =>
+        e.id === evidenceId ? { ...e, uploadStatus: "pending", queueItemId: newItem.id, uploadError: undefined } : e,
+      ),
+    }));
+  }
+
+  async function retryAllFailedEvidence() {
+    const failed = state.evidenceAttachments.filter((e) => e.uploadStatus === "error");
+    for (const att of failed) {
+      await retryEvidence(att.id);
     }
   }
 
@@ -535,6 +642,8 @@ export function AppProvider({ children }: PropsWithChildren) {
       syncReports,
       setOnlineStatus,
       addEvidence,
+      retryEvidence,
+      retryAllFailedEvidence,
       removeEvidence,
       getEvidenceForTask,
       markRegulationRead,

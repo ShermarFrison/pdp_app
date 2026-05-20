@@ -13,7 +13,7 @@ export type {
 export type SyncStatus = "clean" | "pending" | "syncing" | "conflict" | "error";
 
 export type RemoteSnapshot = {
-  kind: "report" | "profile";
+  kind: "report" | "profile" | "evidence";
   id: string;
   version: number;
   data: Record<string, unknown>;

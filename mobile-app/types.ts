@@ -93,9 +93,9 @@ export type HelpTicket = {
   confirmationId: string;
 };
 
-export type EntityKind = "report" | "profile";
+export type EntityKind = "report" | "profile" | "evidence";
 export type SyncQueueItemStatus = "pending" | "in-flight" | "ok" | "conflict" | "error";
-export type SyncOp = "upsert" | "submit";
+export type SyncOp = "upsert" | "submit" | "upload" | "remove";
 export type ConflictResolutionSource = "local" | "remote" | "edited";
 
 export type SyncQueueItem = {
@@ -103,7 +103,7 @@ export type SyncQueueItem = {
   kind: EntityKind;
   op: SyncOp;
   entityId: string;
-  payload: Partial<ComplianceReport> | Partial<FarmProfile>;
+  payload: Partial<ComplianceReport> | Partial<FarmProfile> | Record<string, unknown>;
   baseVersion: number;
   status: SyncQueueItemStatus;
   attempts: number;

@@ -11,6 +11,7 @@ export const REMOTE_SHADOW_KEY = "pdp-sync-remote-shadow";
 export interface SyncClientInterface {
   pushReport(item: SyncQueueItem): Promise<SyncResult>;
   pushProfile(item: SyncQueueItem): Promise<SyncResult>;
+  pushEvidence?(item: SyncQueueItem): Promise<SyncResult>;
   fetchRemote(kind: EntityKind, id: string): Promise<RemoteSnapshot | null>;
 }
 
@@ -19,10 +20,11 @@ export type SyncClient = SyncClientInterface;
 type ShadowStore = {
   report: Record<string, RemoteSnapshot>;
   profile: Record<string, RemoteSnapshot>;
+  evidence: Record<string, RemoteSnapshot>;
 };
 
 function emptyShadow(): ShadowStore {
-  return { report: {}, profile: {} };
+  return { report: {}, profile: {}, evidence: {} };
 }
 
 async function loadShadow(): Promise<ShadowStore> {
@@ -33,6 +35,7 @@ async function loadShadow(): Promise<ShadowStore> {
     return {
       report: parsed.report ?? {},
       profile: parsed.profile ?? {},
+      evidence: parsed.evidence ?? {},
     };
   } catch {
     return emptyShadow();
@@ -78,6 +81,10 @@ export class LocalSimulatedSyncClient implements SyncClientInterface {
 
   async pushProfile(item: SyncQueueItem): Promise<SyncResult> {
     return this.push("profile", item);
+  }
+
+  async pushEvidence(item: SyncQueueItem): Promise<SyncResult> {
+    return this.push("evidence", item);
   }
 
   async fetchRemote(kind: EntityKind, id: string): Promise<RemoteSnapshot | null> {
