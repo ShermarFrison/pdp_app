@@ -286,7 +286,7 @@ Steps:
 
 Expected UI: All visible static strings (tab labels, screen titles, button labels) render in Lithuanian; after restart the language is still Lithuanian.
 Expected audit events: `settings.language.changed` with `to: lt`.
-Result: ____
+Result: BLOCKED — no device available; force-quit + relaunch requires device. Language persistence logic covered by __tests__/language-persistence.test.tsx.
 
 ### 10.2 Persistence across logout / login
 Steps:
@@ -295,7 +295,7 @@ Steps:
 
 Expected UI: Login screen and subsequent screens remain in Lithuanian.
 Expected audit events: `auth.logout`, then `auth.login.success`; language event does not re-fire.
-Result: ____
+Result: BLOCKED — no device available; logout/login session cycle requires device.
 
 ---
 
