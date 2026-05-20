@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 import { AppText } from "@/components/AppText";
 import { Badge } from "@/components/Badge";
@@ -11,7 +12,9 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
-import type { EvidenceAttachment, OcrExtraction } from "@/types";
+import { pickDocument } from "@/lib/evidence/picker";
+import { copyIntoAppDocs } from "@/lib/evidence/storage";
+import type { EvidenceAttachment } from "@/types";
 
 export default function ReportsScreen() {
   const {
@@ -24,7 +27,6 @@ export default function ReportsScreen() {
     syncQueue,
     isOnline,
     setOnlineStatus,
-    applyOcrExtraction,
     syncConflicts,
     resolveConflict,
     language,
@@ -49,9 +51,8 @@ export default function ReportsScreen() {
     fieldSummary: draft?.fieldSummary ?? "",
     notes: draft?.notes ?? "",
   }));
-  const [ocrForm, setOcrForm] = useState<OcrExtraction | null>(null);
-  const [showOcrReview, setShowOcrReview] = useState(false);
   const [conflictChoices, setConflictChoices] = useState<Record<string, string>>({});
+  const router = useRouter();
 
   useEffect(() => {
     if (draft) {
@@ -86,34 +87,21 @@ export default function ReportsScreen() {
     }
   }, [activeConflict?.id]);
 
-  // SCRUM-38: Simulate OCR extraction from a document
-  function simulateOcr(fileName: string): OcrExtraction {
-    return {
-      documentType: "CAP Payment Application",
-      documentDate: "2026-01-15",
-      referenceId: "REF-2026-001",
-      confidence: fileName.toLowerCase().includes("pdf") ? "high" : "low",
-      sourceFileName: fileName,
-    };
-  }
-
   async function handleUploadForOcr() {
-    const fileName = `document_${Date.now()}.pdf`;
-    const extracted = simulateOcr(fileName);
-    setOcrForm(extracted);
-    setShowOcrReview(true);
-  }
-
-  async function handleApplyOcr() {
-    if (!draft || !ocrForm) return;
-    await applyOcrExtraction(draft.id, ocrForm);
-    const ocrNote = `[OCR] ${ocrForm.documentType} (${ocrForm.documentDate}) ref: ${ocrForm.referenceId}`;
-    setDraftForm((current) => ({
-      ...current,
-      notes: current.notes ? `${current.notes}\n${ocrNote}` : ocrNote,
-    }));
-    setShowOcrReview(false);
-    setMessage("OCR data applied to draft notes.");
+    if (!draft) {
+      setMessage("Create or open a draft before uploading a document.");
+      return;
+    }
+    const picked = await pickDocument();
+    if (!picked.ok) return;
+    const ext = picked.asset.fileName.includes(".")
+      ? picked.asset.fileName.split(".").pop()!
+      : "pdf";
+    const internalUri = await copyIntoAppDocs(picked.asset.uri, `ocr-${Date.now()}`, ext);
+    router.push({
+      pathname: "/ocr-review/[reportId]",
+      params: { reportId: draft.id, uri: internalUri, fileName: picked.asset.fileName },
+    });
   }
 
   // SCRUM-40: Resolve a sync conflict
@@ -402,55 +390,6 @@ export default function ReportsScreen() {
                 </AppText>
               </View>
             ) : null}
-
-            {/* SCRUM-38: OCR review panel */}
-            {showOcrReview && ocrForm && (
-              <View style={styles.ocrPanel}>
-                <View style={styles.sectionHeader}>
-                  <Ionicons name="scan-outline" size={15} color="#2a5a8a" />
-                  <AppText variant="label" style={{ color: "#2a5a8a" }}>
-                    {t("reports.ocr_review", language)}
-                  </AppText>
-                  <AppText variant="caption" tone="muted" style={{ marginLeft: "auto" }}>
-                    {t("ocr.extracted_from", language)}: {ocrForm.sourceFileName}
-                  </AppText>
-                </View>
-
-                {ocrForm.confidence === "low" && (
-                  <View style={styles.ocrWarning}>
-                    <Ionicons name="warning-outline" size={14} color="#8a6514" />
-                    <AppText variant="caption" style={{ color: "#8a6514", flex: 1 }}>
-                      {t("ocr.low_confidence", language)}
-                    </AppText>
-                  </View>
-                )}
-
-                <Field
-                  label={t("ocr.document_type", language)}
-                  value={ocrForm.documentType}
-                  onChangeText={(val) => setOcrForm((f) => f ? { ...f, documentType: val } : f)}
-                />
-                <Field
-                  label={t("ocr.document_date", language)}
-                  value={ocrForm.documentDate}
-                  onChangeText={(val) => setOcrForm((f) => f ? { ...f, documentDate: val } : f)}
-                />
-                <Field
-                  label={t("ocr.reference_id", language)}
-                  value={ocrForm.referenceId}
-                  onChangeText={(val) => setOcrForm((f) => f ? { ...f, referenceId: val } : f)}
-                />
-
-                <View style={styles.ocrActions}>
-                  <PrimaryButton label={t("ocr.confirm_apply", language)} onPress={handleApplyOcr} />
-                  <PrimaryButton
-                    label="Cancel"
-                    variant="ghost"
-                    onPress={() => setShowOcrReview(false)}
-                  />
-                </View>
-              </View>
-            )}
 
             <Field
               label="Period Year"
