@@ -13,7 +13,7 @@ import { deriveTasks } from "@/lib/tasks";
 
 export default function RegulationsScreen() {
   const { regulationChanges, markRegulationRead, farmProfile, language } = useApp();
-  const tasks = deriveTasks(farmProfile);
+  const tasks = deriveTasks(farmProfile, language);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const unreadCount = regulationChanges.filter((r) => !r.read).length;

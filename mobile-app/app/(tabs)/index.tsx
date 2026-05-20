@@ -39,7 +39,7 @@ const FILTER_TABS: FilterTab[] = ["All", "Overdue", "Not started", "Done"];
 
 export default function DashboardScreen() {
   const { sessionUser, farmProfile, logout, reports, addEvidence, removeEvidence, getEvidenceForTask, language } = useApp();
-  const tasks = deriveTasks(farmProfile);
+  const tasks = deriveTasks(farmProfile, language);
   const draftCount = reports.filter((r) => r.status === "draft").length;
   const overdueTasks = tasks.filter((t) => t.status === "Overdue").length;
   const [filter, setFilter] = useState<FilterTab>("All");

@@ -216,7 +216,7 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const tasks = deriveTasks(state.farmProfile);
+    const tasks = deriveTasks(state.farmProfile, state.language);
     rescheduleAll(tasks, {
       remindersEnabled: state.remindersEnabled,
       reminderOffsets: state.reminderOffsets,

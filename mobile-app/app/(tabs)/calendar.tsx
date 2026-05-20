@@ -40,7 +40,7 @@ function getFirstDayOfWeek(year: number, month: number) {
 
 export default function CalendarScreen() {
   const { farmProfile, language } = useApp();
-  const tasks = deriveTasks(farmProfile);
+  const tasks = deriveTasks(farmProfile, language);
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
