@@ -258,7 +258,7 @@ Steps:
 
 Expected UI: Review screen shows the extracted fields with a yellow "Low confidence" badge next to flagged fields; **Apply** writes the values back to the draft and dismisses the review screen; the draft form now contains those values.
 Expected audit events: `ocr.run` with the document id, then `ocr.applied` with the list of applied field names.
-Result: ____
+Result: BLOCKED — no device available; review screen UI requires device. OCR low-confidence + apply flow covered by __tests__/ocr-flow.test.tsx.
 
 ---
 
