@@ -38,6 +38,8 @@ import {
   EvidenceAttachment,
   FarmProfile,
   HelpTicket,
+  ExtractionResult,
+  OcrApplyMap,
   OcrExtraction,
   RegulationChange,
   SyncConflict,
@@ -94,6 +96,16 @@ type AppContextValue = {
   markRegulationRead: (regulationId: string) => Promise<void>;
   submitHelpTicket: (category: string, message: string, screenshotUri?: string) => Promise<HelpTicket>;
   applyOcrExtraction: (reportId: string, extraction: OcrExtraction) => Promise<void>;
+  applyOcrExtractionV2: (
+    reportId: string,
+    result: ExtractionResult,
+    applied: { documentType: string; documentDate: string; referenceId: string },
+    sourceMap: OcrApplyMap,
+  ) => Promise<void>;
+  openRegulation: (
+    regulationId: string,
+    target: { kind: "task" | "guidance"; id: string },
+  ) => Promise<void>;
   resolveConflict: (
     conflictId: string,
     merged: Record<string, unknown>,
@@ -588,6 +600,59 @@ export function AppProvider({ children }: PropsWithChildren) {
     await appendLog("ocr.prefill", `OCR extraction from "${extraction.sourceFileName}" applied to report ${reportId}.`);
   }
 
+  async function applyOcrExtractionV2(
+    reportId: string,
+    result: ExtractionResult,
+    applied: { documentType: string; documentDate: string; referenceId: string },
+    sourceMap: OcrApplyMap,
+  ) {
+    const note = `[OCR] ${applied.documentType} (${applied.documentDate}) ref: ${applied.referenceId}`;
+    setState((current) => ({
+      ...current,
+      reports: current.reports.map((report) =>
+        report.id === reportId
+          ? { ...report, notes: report.notes ? `${report.notes}\n${note}` : note }
+          : report,
+      ),
+      ocrExtractions: [
+        ...current.ocrExtractions,
+        {
+          documentType: applied.documentType,
+          documentDate: applied.documentDate,
+          referenceId: applied.referenceId,
+          confidence:
+            result.documentType.confidence < 0.7 ||
+            result.documentDate.confidence < 0.7 ||
+            result.referenceId.confidence < 0.7
+              ? "low"
+              : "high",
+          sourceFileName: result.sourceFileName,
+          appliedToReportId: reportId,
+        },
+      ],
+    }));
+    await appendLog(
+      "ocr.applied",
+      `OCR applied to report ${reportId} from "${result.sourceFileName}". Source map: ${JSON.stringify(sourceMap)}.`,
+    );
+  }
+
+  async function openRegulation(
+    regulationId: string,
+    target: { kind: "task" | "guidance"; id: string },
+  ) {
+    setState((current) => ({
+      ...current,
+      regulationChanges: current.regulationChanges.map((r) =>
+        r.id === regulationId ? { ...r, read: true } : r,
+      ),
+    }));
+    await appendLog(
+      "regulation.opened",
+      `Opened regulation ${regulationId} -> ${target.kind}/${target.id}.`,
+    );
+  }
+
   async function resolveConflict(
     conflictId: string,
     merged: Record<string, unknown>,
@@ -708,6 +773,8 @@ export function AppProvider({ children }: PropsWithChildren) {
       markRegulationRead,
       submitHelpTicket,
       applyOcrExtraction,
+      applyOcrExtractionV2,
+      openRegulation,
       resolveConflict,
       inviteAdvisor,
       revokeAdvisor,
