@@ -1,10 +1,17 @@
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { AppProvider, useApp } from "@/context/AppContext";
+import { registerNotificationTapHandler } from "@/lib/notifications";
 
 function RootNavigator() {
   const { isHydrated } = useApp();
+
+  useEffect(() => {
+    const sub = registerNotificationTapHandler();
+    return () => sub.remove();
+  }, []);
 
   if (!isHydrated) {
     return (
@@ -23,7 +30,10 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="conflicts/[id]" options={{ presentation: "modal", title: "Resolve conflict", headerShown: true }} />
+      <Stack.Screen
+        name="conflicts/[id]"
+        options={{ presentation: "modal", title: "Resolve conflict", headerShown: true }}
+      />
     </Stack>
   );
 }
