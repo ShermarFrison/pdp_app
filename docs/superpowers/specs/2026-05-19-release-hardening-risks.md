@@ -41,4 +41,13 @@ Owner: <name>
 Notes: <free text>
 ```
 
-(No findings recorded yet. Append entries below as they are discovered.)
+### F-00 (informational)
+```
+ID: F-00 (informational)
+Flow: unit+integration baseline
+Summary: SP1-4 baseline = Tests: 96 passed, 96 total (Test Suites: 24 passed, 24 total)
+Severity: minor
+Decision: accepted-residual
+Owner: The V
+Notes: Recorded from `npm --prefix mobile-app test -- --watchAll=false` at the start of SP5.
+```
