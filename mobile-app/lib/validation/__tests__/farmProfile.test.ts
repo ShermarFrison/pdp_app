@@ -7,6 +7,9 @@ const valid = {
   hectares: "12.5",
   farmingType: "Arable" as const,
   livestockCount: "0",
+  localVersion: 0,
+  baseVersion: 0,
+  syncStatus: "clean" as const,
 };
 
 test("accepts a fully populated profile", () => {

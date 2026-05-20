@@ -4,6 +4,8 @@ export type User = {
   email: string;
 };
 
+export type ProfileSyncStatus = "clean" | "pending" | "syncing" | "conflict" | "error";
+
 export type FarmProfile = {
   farmName: string;
   farmerName: string;
@@ -12,6 +14,9 @@ export type FarmProfile = {
   farmingType: "Arable" | "Dairy" | "Mixed" | "";
   livestockCount: string;
   lastSyncedAt?: string;
+  localVersion: number;
+  baseVersion: number;
+  syncStatus: ProfileSyncStatus;
 };
 
 export type TaskStatus = "Not started" | "In progress" | "Overdue" | "Done";
@@ -77,11 +82,43 @@ export type HelpTicket = {
   confirmationId: string;
 };
 
+export type EntityKind = "report" | "profile";
+export type SyncQueueItemStatus = "pending" | "in-flight" | "ok" | "conflict" | "error";
+export type SyncOp = "upsert" | "submit";
+export type ConflictResolutionSource = "local" | "remote" | "edited";
+
 export type SyncQueueItem = {
   id: string;
-  action: "report.submit" | "report.save";
-  payload: Partial<ComplianceReport> & { reportId: string };
+  kind: EntityKind;
+  op: SyncOp;
+  entityId: string;
+  payload: Partial<ComplianceReport> | Partial<FarmProfile>;
+  baseVersion: number;
+  status: SyncQueueItemStatus;
+  attempts: number;
+  nextAttemptAt: number;
+  lastError?: string;
   createdAt: string;
+  updatedAt: string;
+};
+
+export type ConflictFieldRecord = {
+  field: string;
+  localValue: unknown;
+  remoteValue: unknown;
+  baseValue: unknown;
+  resolvedValue?: unknown;
+  source?: ConflictResolutionSource;
+};
+
+export type SyncConflict = {
+  id: string;
+  kind: EntityKind;
+  entityId: string;
+  queueItemId: string;
+  fields: ConflictFieldRecord[];
+  detectedAt: string;
+  resolvedAt?: string;
 };
 
 export type AuditEventType =
@@ -101,6 +138,8 @@ export type AuditEventType =
   | "ocr.prefill"
   | "sync.conflict"
   | "sync.conflict_resolve"
+  | "sync.conflict_resolved"
+  | "sync.migration_v1"
   | "advisor.invite"
   | "advisor.revoke"
   | "audit.export";
@@ -122,23 +161,6 @@ export type OcrExtraction = {
   confidence: OcrConfidence;
   sourceFileName: string;
   appliedToReportId?: string;
-};
-
-export type ConflictFieldKey = "title" | "scheme" | "periodYear" | "inspectionDate" | "fieldSummary" | "notes";
-
-export type ConflictField = {
-  key: ConflictFieldKey;
-  localValue: string;
-  serverValue: string;
-  chosenValue?: string;
-};
-
-export type SyncConflict = {
-  id: string;
-  reportId: string;
-  fields: ConflictField[];
-  detectedAt: string;
-  resolvedAt?: string;
 };
 
 export type AdvisorPermission = "read-only" | "edit";

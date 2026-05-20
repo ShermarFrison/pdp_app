@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { detectFieldConflicts } from "@/lib/sync/conflicts";
+import type { SyncClient } from "@/lib/sync/syncClient";
 import type {
   ConflictResolutionSource,
-  SyncClient,
   SyncConflict,
   SyncQueueItem,
   SyncResult,

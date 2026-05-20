@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createSyncQueue, SYNC_QUEUE_KEY } from "@/lib/sync/syncQueue";
-import type { SyncClient, SyncResult } from "@/lib/sync/types";
+import type { SyncResult } from "@/lib/sync/types";
+import type { SyncClient } from "@/lib/sync/syncClient";
 
 beforeEach(async () => {
   await AsyncStorage.clear();
