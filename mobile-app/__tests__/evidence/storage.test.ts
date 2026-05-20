@@ -1,4 +1,4 @@
-jest.mock("expo-file-system", () => {
+jest.mock("expo-file-system/legacy", () => {
   const files = new Map<string, true>();
   return {
     documentDirectory: "file:///mock-docs/",
@@ -16,7 +16,7 @@ jest.mock("expo-file-system", () => {
   };
 });
 
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { copyIntoAppDocs, remove } from "@/lib/evidence/storage";
 const __resetFs = (FileSystem as unknown as { __resetFs: () => void }).__resetFs;
 

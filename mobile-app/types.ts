@@ -48,17 +48,28 @@ export type ComplianceReport = {
   status: ReportStatus;
   submittedAt?: string;
   basedOnReportId?: string;
+  submissionState?: SubmissionState;
+  localVersion?: number;
+  baseVersion?: number;
 };
+
+export type EvidenceUploadStatus = "pending" | "in-flight" | "ok" | "error";
 
 export type EvidenceAttachment = {
   id: string;
   taskId: string;
+  reportId?: string;
   uri: string;
   fileName: string;
   type: "photo" | "pdf";
   sizeBytes: number;
   addedAt: string;
+  uploadStatus?: EvidenceUploadStatus;
+  uploadError?: string;
+  queueItemId?: string;
 };
+
+export type SubmissionState = "pending" | "acknowledged" | "conflict" | "failed";
 
 export type RegulationChange = {
   id: string;
@@ -128,6 +139,7 @@ export type AuditEventType =
   | "profile.sync"
   | "report.duplicate"
   | "report.submit"
+  | "report.submit_acknowledged"
   | "report.create"
   | "report.draft_save"
   | "report.sync"
