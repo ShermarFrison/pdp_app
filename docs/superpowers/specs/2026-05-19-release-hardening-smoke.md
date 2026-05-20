@@ -186,7 +186,7 @@ Steps:
 
 Expected UI: A thumbnail appears in the report's evidence strip; tapping it opens a full-screen preview.
 Expected audit events: `evidence.added` with `type: photo` and the evidence id.
-Result: ____
+Result: BLOCKED — no device available; image picker requires device. Picker/storage logic covered by __tests__/evidence/*.test.ts.
 
 ### 6.2 Pick PDF
 Steps:
@@ -195,7 +195,7 @@ Steps:
 
 Expected UI: A document chip appears in the evidence strip with the filename; tapping opens a PDF preview.
 Expected audit events: `evidence.added` with `type: pdf`.
-Result: ____
+Result: BLOCKED — no device available; document picker requires device.
 
 ### 6.3 Forced-failure retry
 Steps:
@@ -205,7 +205,7 @@ Steps:
 
 Expected UI: First attempt shows a red error icon and "Upload failed — Retry" link; tapping **Retry** turns the icon to a spinner, then to a success check.
 Expected audit events: `evidence.upload.failed`, then `evidence.upload.retried`, then `evidence.upload.succeeded`, all with the same evidence id.
-Result: ____
+Result: BLOCKED — no device available; UI retry affordance requires device. Retry logic covered by __tests__/integration/evidence-report-flow.test.tsx.
 
 ### 6.4 Evidence visible in report preview
 Steps:
@@ -213,7 +213,7 @@ Steps:
 
 Expected UI: The preview screen lists every attached evidence item (photos as thumbnails, PDFs as chips) in attach order.
 Expected audit events: `report.previewed`.
-Result: ____
+Result: BLOCKED — no device available; preview screen requires device.
 
 ---
 
