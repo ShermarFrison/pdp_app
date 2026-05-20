@@ -1,4 +1,4 @@
-jest.mock("expo-file-system", () => {
+jest.mock("expo-file-system/legacy", () => {
   const files = new Map<string, string>();
   return {
     cacheDirectory: "file:///cache/",
@@ -48,7 +48,7 @@ jest.mock("expo-sharing", () => {
 });
 
 import { formatCsv, formatJson, exportToFile, shareFile } from "@/lib/audit/export";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import type { AuditLogEntry } from "@/types";
 

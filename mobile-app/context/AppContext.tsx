@@ -23,6 +23,9 @@ import { copyIntoAppDocs, remove as removeFromDocs } from "@/lib/evidence/storag
 import { pickPhoto, pickDocument, type PickResult } from "@/lib/evidence/picker";
 import { submitReport as submitReportViaQueue, observeSubmission } from "@/lib/reports";
 import { validateFarmProfile } from "@/lib/validation/farmProfile";
+import { deriveTasks } from "@/lib/tasks";
+import { rescheduleAll } from "@/lib/notifications";
+import { exportToFile, shareFile } from "@/lib/audit";
 import {
   Advisor,
   AdvisorPermission,
@@ -209,6 +212,22 @@ export function AppProvider({ children }: PropsWithChildren) {
     if (!isHydrated) return;
     saveState(state);
   }, [isHydrated, state]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const tasks = deriveTasks(state.farmProfile);
+    rescheduleAll(tasks, {
+      remindersEnabled: state.remindersEnabled,
+      reminderOffsets: state.reminderOffsets,
+    }).catch((err) => {
+      console.warn("rescheduleAll failed", err);
+    });
+  }, [
+    isHydrated,
+    state.remindersEnabled,
+    state.reminderOffsets,
+    state.farmProfile,
+  ]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -640,21 +659,13 @@ export function AppProvider({ children }: PropsWithChildren) {
       const ts = new Date(entry.timestamp);
       return ts >= from && ts <= to;
     });
-    let content: string;
-    if (format === "csv") {
-      const header = "id,type,userEmail,timestamp,details";
-      const rows = filtered.map((e) =>
-        [e.id, e.type, e.userEmail, e.timestamp, `"${e.details.replace(/"/g, '""')}"`].join(","),
-      );
-      content = [header, ...rows].join("\n");
-    } else {
-      content = JSON.stringify(filtered, null, 2);
-    }
+    const uri = await exportToFile(filtered, format, fromDate, toDate);
     await appendLog(
       "audit.export",
       `Exported ${filtered.length} audit log entries (${format.toUpperCase()}) from ${fromDate} to ${toDate}.`,
     );
-    return content;
+    await shareFile(uri);
+    return uri;
   }
 
   const value = useMemo<AppContextValue>(
