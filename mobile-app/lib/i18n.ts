@@ -1,3 +1,5 @@
+import * as Localization from "expo-localization";
+
 import { AppLanguage } from "@/types";
 
 export type I18nKey =
@@ -71,6 +73,9 @@ export type I18nKey =
   | "ocr.low_confidence"
   | "ocr.confirm_apply"
   | "ocr.extracted_from"
+  | "ocr.cancel"
+  | "ocr.review_title"
+  | "ocr.applied_msg"
   | "conflict.title"
   | "conflict.subtitle"
   | "conflict.local"
@@ -83,7 +88,31 @@ export type I18nKey =
   | "export.preview"
   | "export.copy_clipboard"
   | "export.copied"
-  | "export.generate";
+  | "export.generate"
+  | "task.buffer_strips.title"
+  | "task.buffer_strips.guidance"
+  | "task.buffer_strips.what_to_do"
+  | "task.buffer_strips.penalty"
+  | "task.soil_cover.title"
+  | "task.soil_cover.guidance"
+  | "task.soil_cover.what_to_do"
+  | "task.soil_cover.penalty"
+  | "task.manure_log.title"
+  | "task.manure_log.guidance"
+  | "task.manure_log.what_to_do"
+  | "task.manure_log.penalty"
+  | "task.organic_record.title"
+  | "task.organic_record.guidance"
+  | "task.organic_record.what_to_do"
+  | "task.organic_record.penalty"
+  | "task.nitrate_plan.title"
+  | "task.nitrate_plan.guidance"
+  | "task.nitrate_plan.what_to_do"
+  | "task.nitrate_plan.penalty"
+  | "task.crop_rotation_plan.title"
+  | "task.crop_rotation_plan.guidance"
+  | "task.crop_rotation_plan.what_to_do"
+  | "task.crop_rotation_plan.penalty";
 
 type Dictionary = Record<I18nKey, string>;
 
@@ -158,6 +187,9 @@ const EN: Dictionary = {
   "ocr.low_confidence": "Low confidence — review before applying",
   "ocr.confirm_apply": "Apply to Draft",
   "ocr.extracted_from": "Extracted from",
+  "ocr.cancel": "Cancel",
+  "ocr.review_title": "Review extracted fields",
+  "ocr.applied_msg": "OCR fields applied to draft.",
   "conflict.title": "Sync Conflict",
   "conflict.subtitle": "Choose which value to keep for each field.",
   "conflict.local": "Local",
@@ -171,6 +203,45 @@ const EN: Dictionary = {
   "export.copy_clipboard": "Copy to Clipboard",
   "export.copied": "Copied!",
   "export.generate": "Generate Export",
+  "task.buffer_strips.title": "Confirm field buffer strips",
+  "task.buffer_strips.guidance": "Walk boundary fields and note any missing protective strips.",
+  "task.buffer_strips.what_to_do":
+    "1. Walk the perimeter of all fields.\n2. Check that buffer strips of at least 3 metres exist along watercourses.\n3. Photograph any gaps and note their GPS location.\n4. Record findings in your compliance log.",
+  "task.buffer_strips.penalty":
+    "Missing or inadequate buffer strips can result in a 3–5% reduction in your CAP direct payment. Repeated non-compliance may lead to additional penalty multipliers in subsequent years.",
+  "task.soil_cover.title": "Document winter soil cover",
+  "task.soil_cover.guidance": "Capture where soil cover is maintained and record the crop plan.",
+  "task.soil_cover.what_to_do":
+    "1. Survey all arable fields after harvest.\n2. Record which fields have winter crop, cover crop, or natural vegetation.\n3. Ensure at least 80% of soil is covered between 1 Nov – 15 Feb.\n4. Upload photographic evidence or add notes to the field log.",
+  "task.soil_cover.penalty":
+    "GAEC 6 requires minimum soil cover on large holdings. Non-compliance is classified as a high-risk finding and can result in a 5–10% cut to your area payments.",
+  "task.manure_log.title": "Update manure storage log",
+  "task.manure_log.guidance": "Record storage checks and spreading windows in plain language notes.",
+  "task.manure_log.what_to_do":
+    "1. Record the current volume in each manure storage facility.\n2. Confirm no spreading occurred during closed periods (1 Oct – 1 Feb).\n3. Log the date, facility ID, and your name as the responsible person.\n4. Check for any signs of leakage and record the outcome.",
+  "task.manure_log.penalty":
+    "SMR 1 (Nitrates Directive) requires accurate manure storage records. Failures can carry up to 10% payment reduction and trigger on-site inspection.",
+  "task.organic_record.title": "Maintain organic certification record",
+  "task.organic_record.guidance":
+    "Keep inputs and field-history records aligned with your organic body's annual audit.",
+  "task.organic_record.what_to_do":
+    "1. Update the inputs ledger with any seed, compost, or amendment applied this season.\n2. Confirm no prohibited substances were used on certified parcels.\n3. Attach the latest certificate scan to your profile.\n4. Confirm parcel boundaries match the certified map.",
+  "task.organic_record.penalty":
+    "Loss of organic certification revokes the per-hectare organic premium and can require repayment of premiums already received in the current campaign year.",
+  "task.nitrate_plan.title": "File nitrate-zone fertilisation plan",
+  "task.nitrate_plan.guidance":
+    "Holdings inside a Nitrate Vulnerable Zone (NVZ) must submit an annual plan before the spreading window.",
+  "task.nitrate_plan.what_to_do":
+    "1. Calculate N application rates per parcel.\n2. Respect the NVZ closed period for spreading.\n3. File the plan with the regional authority before 1 March.\n4. Keep proof of submission with your audit log.",
+  "task.nitrate_plan.penalty":
+    "Failure to file an NVZ plan is a cross-compliance breach: 3% reduction baseline, doubled on repeat finding, plus possible environmental fine.",
+  "task.crop_rotation_plan.title": "Confirm crop-rotation plan",
+  "task.crop_rotation_plan.guidance":
+    "GAEC 7 requires a documented rotation on arable holdings above the hectare threshold.",
+  "task.crop_rotation_plan.what_to_do":
+    "1. List each parcel's primary crop for the last two seasons.\n2. Mark parcels where the same crop has been grown two years running.\n3. Plan a different main crop or catch-crop for any flagged parcels.\n4. Save the plan as part of your audit record.",
+  "task.crop_rotation_plan.penalty":
+    "GAEC 7 non-compliance reduces direct payments by 1–3% and is treated as repeat-finding on the second consecutive year.",
 };
 
 const LT: Dictionary = {
@@ -244,6 +315,9 @@ const LT: Dictionary = {
   "ocr.low_confidence": "Žemas patikimumas — patikrinkite prieš taikydami",
   "ocr.confirm_apply": "Taikyti juodraščiui",
   "ocr.extracted_from": "Išgauta iš",
+  "ocr.cancel": "Atšaukti",
+  "ocr.review_title": "Peržiūrėti išgautus laukus",
+  "ocr.applied_msg": "OCR laukai pritaikyti juodraščiui.",
   "conflict.title": "Sinchronizavimo konfliktas",
   "conflict.subtitle": "Pasirinkite kiekvienam laukui naudojamą reikšmę.",
   "conflict.local": "Vietinis",
@@ -257,12 +331,65 @@ const LT: Dictionary = {
   "export.copy_clipboard": "Kopijuoti į iškarpinę",
   "export.copied": "Nukopijuota!",
   "export.generate": "Generuoti eksportą",
+  "task.buffer_strips.title": "Patvirtinkite laukų apsaugines juostas",
+  "task.buffer_strips.guidance": "Apeikite ribinius laukus ir užfiksuokite trūkstamas apsaugines juostas.",
+  "task.buffer_strips.what_to_do":
+    "1. Apeikite visų laukų perimetrą.\n2. Patikrinkite, ar šalia vandens telkinių yra bent 3 m apsaugos juostos.\n3. Nufotografuokite trūkumus ir užrašykite GPS koordinates.\n4. Įrašykite išvadas į atitikties žurnalą.",
+  "task.buffer_strips.penalty":
+    "Trūkstamos arba netinkamos apsaugos juostos gali sumažinti tiesiogines CAP išmokas 3–5%. Pasikartojantis pažeidimas didina nuobaudą kitais metais.",
+  "task.soil_cover.title": "Dokumentuokite žiemos dirvos dangą",
+  "task.soil_cover.guidance":
+    "Užfiksuokite, kur palaikoma dirvos danga, ir užrašykite augalų planą.",
+  "task.soil_cover.what_to_do":
+    "1. Po derliaus apžiūrėkite visus ariamus laukus.\n2. Pažymėkite laukus su žieminiu augalu, tarpine kultūra ar natūralia augmenija.\n3. Užtikrinkite ne mažesnę nei 80% dirvos dangą lapkričio 1 – vasario 15 d.\n4. Įkelkite nuotraukų įrodymus arba pridėkite pastabas.",
+  "task.soil_cover.penalty":
+    "GAEC 6 reikalauja minimalios dirvos dangos didesniuose ūkiuose. Pažeidimas — didelės rizikos išvada, gali sumažinti plotines išmokas 5–10%.",
+  "task.manure_log.title": "Atnaujinkite mėšlo saugojimo žurnalą",
+  "task.manure_log.guidance": "Užfiksuokite saugojimo patikras ir tręšimo langus aiškia kalba.",
+  "task.manure_log.what_to_do":
+    "1. Užfiksuokite dabartinį tūrį kiekvienoje mėšlo saugykloje.\n2. Patvirtinkite, kad uždarais laikotarpiais (spalio 1 – vasario 1) tręšimas nevyko.\n3. Užrašykite datą, objekto ID ir atsakingo asmens vardą.\n4. Patikrinkite, ar nėra nutekėjimo požymių, ir užrašykite rezultatą.",
+  "task.manure_log.penalty":
+    "SMR 1 (Nitratų direktyva) reikalauja tikslių įrašų. Pažeidimai gali sumažinti išmokas iki 10% ir sukelti vietos patikrinimą.",
+  "task.organic_record.title": "Tvarkykite ekologinės sertifikacijos įrašus",
+  "task.organic_record.guidance":
+    "Įvedimų ir laukų istorijos įrašai turi atitikti jūsų sertifikavimo įstaigos auditą.",
+  "task.organic_record.what_to_do":
+    "1. Atnaujinkite įvedimų žurnalą su šio sezono sėklomis, kompostu ar pataisomis.\n2. Patvirtinkite, kad sertifikuotuose laukuose nenaudotos draudžiamos medžiagos.\n3. Pridėkite naujausią sertifikato kopiją prie profilio.\n4. Patikrinkite, ar laukų ribos atitinka sertifikuotą žemėlapį.",
+  "task.organic_record.penalty":
+    "Sertifikato praradimas panaikina ekologinę priemoką ir gali reikalauti grąžinti šiais metais jau gautas išmokas.",
+  "task.nitrate_plan.title": "Pateikite nitratų zonos tręšimo planą",
+  "task.nitrate_plan.guidance":
+    "Ūkiai pažeidžiamoje nitratams zonoje (NVZ) privalo pateikti metinį planą prieš tręšimo langą.",
+  "task.nitrate_plan.what_to_do":
+    "1. Apskaičiuokite N normas kiekvienam laukui.\n2. Laikykitės NVZ uždaro tręšimo laikotarpio.\n3. Pateikite planą regionų institucijai iki kovo 1 d.\n4. Saugokite pateikimo įrodymą audito žurnale.",
+  "task.nitrate_plan.penalty":
+    "NVZ plano nepateikimas yra kryžminės atitikties pažeidimas: 3% bazinis sumažinimas, dvigubinamas pakartotinai, su galima aplinkosaugos bauda.",
+  "task.crop_rotation_plan.title": "Patvirtinkite sėjomainos planą",
+  "task.crop_rotation_plan.guidance":
+    "GAEC 7 reikalauja dokumentuotos sėjomainos ariamuose ūkiuose virš hektarų ribos.",
+  "task.crop_rotation_plan.what_to_do":
+    "1. Surašykite kiekvieno lauko pagrindinį augalą už paskutinius du sezonus.\n2. Pažymėkite laukus, kuriuose tas pats augalas augintas dvejus metus iš eilės.\n3. Suplanuokite kitą pagrindinį augalą arba tarpinę kultūrą tokiuose laukuose.\n4. Išsaugokite planą kaip audito įrašo dalį.",
+  "task.crop_rotation_plan.penalty":
+    "GAEC 7 pažeidimas sumažina tiesiogines išmokas 1–3% ir antrais metais iš eilės laikomas pakartotiniu.",
 };
 
 const DICTIONARIES: Record<AppLanguage, Dictionary> = { en: EN, lt: LT };
+
+export const EN_KEYS = Object.keys(EN) as I18nKey[];
+export const LT_KEYS = Object.keys(LT) as I18nKey[];
+export const SUPPORTED_LANGUAGES: AppLanguage[] = ["en", "lt"];
 
 export function t(key: I18nKey, lang: AppLanguage): string {
   const val = DICTIONARIES[lang]?.[key];
   if (!val) return `[MISSING: ${key}]`;
   return val;
+}
+
+export function getInitialLanguage(): AppLanguage {
+  const locales = Localization.getLocales();
+  const first = locales?.[0];
+  const code = first?.languageCode;
+  if (code === "lt") return "lt";
+  if (code === "en") return "en";
+  return "en";
 }
