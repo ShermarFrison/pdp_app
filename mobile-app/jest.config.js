@@ -6,6 +6,6 @@ module.exports = {
   },
   testMatch: ["**/__tests__/**/*.test.(ts|tsx)"],
   transformIgnorePatterns: [
-    "node_modules/(?!(jest-)?react-native|@react-native|expo(nent)?|@expo(nent)?|expo-router|@react-native-async-storage)",
+    "node_modules/(?!(jest-)?react-native|@react-native|expo(nent)?|@expo(nent)?|expo-router|expo-localization|@react-native-async-storage)",
   ],
 };
