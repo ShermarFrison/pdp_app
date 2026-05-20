@@ -134,7 +134,7 @@ Steps:
 
 Expected UI: Each date cell with one or more due tasks shows a colored dot; tapping a dated cell expands the list of tasks due that day, ordered by time.
 Expected audit events: `calendar.month.viewed` with the month/year.
-Result: ____
+Result: BLOCKED — no device available; visual calendar grid requires device.
 
 ### 4.2 Past-due grouping
 Steps:
@@ -142,7 +142,7 @@ Steps:
 
 Expected UI: A collapsible **Past due** section lists every task with a due date strictly before today, ordered oldest first; each row shows the days-overdue count.
 Expected audit events: none beyond Flow 4.1.
-Result: ____
+Result: BLOCKED — no device available; Past-due section UI requires device.
 
 ---
 
