@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
@@ -11,7 +11,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
-import { OcrExtraction } from "@/types";
+import type { EvidenceAttachment, OcrExtraction } from "@/types";
 
 export default function ReportsScreen() {
   const {
@@ -28,6 +28,11 @@ export default function ReportsScreen() {
     syncConflicts,
     resolveConflict,
     language,
+    evidenceAttachments,
+    addEvidence,
+    removeEvidence,
+    retryEvidence,
+    retryAllFailedEvidence,
   } = useApp();
 
   const submittedReports = useMemo(
@@ -302,6 +307,23 @@ export default function ReportsScreen() {
         </Card>
       )}
 
+      {/* SP2: Failed-evidence banner */}
+      {(() => {
+        const failed = evidenceAttachments.filter((e) => e.uploadStatus === "error");
+        if (failed.length === 0) return null;
+        return (
+          <Card variant="elevated">
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Ionicons name="warning-outline" size={16} color="#c0392b" />
+              <AppText style={{ flex: 1 }}>
+                {`${failed.length} attachment(s) failed to upload — tap to retry all.`}
+              </AppText>
+              <PrimaryButton label="Retry all" onPress={() => retryAllFailedEvidence()} compact />
+            </View>
+          </Card>
+        );
+      })()}
+
       {/* Create new report button */}
       <PrimaryButton
         label={t("reports.create_new", language)}
@@ -350,6 +372,10 @@ export default function ReportsScreen() {
                   variant="secondary"
                   compact
                   onPress={() => handleDuplicate(report.id)}
+                />
+                <EvidenceSection
+                  attachments={evidenceAttachments.filter((e) => e.taskId === report.id || e.reportId === report.id)}
+                  readOnly
                 />
               </View>
             </View>
@@ -453,6 +479,36 @@ export default function ReportsScreen() {
               onChangeText={(value) => setDraftForm((current) => ({ ...current, notes: value }))}
             />
 
+            {/* SP2: Evidence section */}
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <AppText variant="subtitle">Evidence</AppText>
+              <EvidenceSection
+                attachments={evidenceAttachments.filter((e) => e.taskId === draft.id || e.reportId === draft.id)}
+                onRetry={retryEvidence}
+                onRemove={removeEvidence}
+              />
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <PrimaryButton
+                  label="Add photo"
+                  variant="secondary"
+                  compact
+                  onPress={async () => {
+                    const r = await addEvidence(draft.id, { kind: "photo" });
+                    if (!r.ok && r.error) setMessage(r.error);
+                  }}
+                />
+                <PrimaryButton
+                  label="Add PDF"
+                  variant="secondary"
+                  compact
+                  onPress={async () => {
+                    const r = await addEvidence(draft.id, { kind: "pdf" });
+                    if (!r.ok && r.error) setMessage(r.error);
+                  }}
+                />
+              </View>
+            </View>
+
             <PrimaryButton label={t("reports.save_draft", language)} variant="ghost" onPress={handleSaveDraft} />
             <PrimaryButton label={t("reports.submit", language)} onPress={handleSubmit} />
           </>
@@ -488,6 +544,66 @@ export default function ReportsScreen() {
         </View>
       ) : null}
     </Screen>
+  );
+}
+
+function EvidenceSection(props: {
+  attachments: EvidenceAttachment[];
+  onRetry?: (id: string) => void;
+  onRemove?: (id: string) => void;
+  readOnly?: boolean;
+}) {
+  const { attachments, onRetry, onRemove, readOnly } = props;
+  if (attachments.length === 0) {
+    return <AppText variant="caption" tone="muted">No evidence attached.</AppText>;
+  }
+  return (
+    <View style={{ gap: 8 }}>
+      {attachments.map((a) => (
+        <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {a.type === "photo" ? (
+            <Image source={{ uri: a.uri }} style={{ width: 40, height: 40, borderRadius: 4 }} />
+          ) : (
+            <Ionicons name="document-text-outline" size={32} color="#3f6a52" />
+          )}
+          <View style={{ flex: 1 }}>
+            <AppText>{a.fileName}</AppText>
+            <AppText variant="caption" tone="muted">
+              {(a.sizeBytes / 1024).toFixed(1)} KB
+            </AppText>
+          </View>
+          <UploadStatusPill status={a.uploadStatus ?? "pending"} />
+          {!readOnly && a.uploadStatus === "error" && onRetry && (
+            <PrimaryButton label="Retry" variant="secondary" compact onPress={() => onRetry(a.id)} />
+          )}
+          {!readOnly && onRemove && (
+            <PrimaryButton label="Remove" variant="ghost" compact onPress={() => onRemove(a.id)} />
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function UploadStatusPill(props: { status: NonNullable<EvidenceAttachment["uploadStatus"]> }) {
+  const label =
+    props.status === "ok" ? "uploaded"
+    : props.status === "error" ? "failed"
+    : "uploading…";
+  return (
+    <View
+      style={{
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+        backgroundColor:
+          props.status === "ok" ? "#d8efe1"
+          : props.status === "error" ? "#f6d4d2"
+          : "#e7ebf2",
+      }}
+    >
+      <AppText variant="caption">{label}</AppText>
+    </View>
   );
 }
 
