@@ -99,7 +99,7 @@ export default function ReportsScreen() {
       : "pdf";
     const internalUri = await copyIntoAppDocs(picked.asset.uri, `ocr-${Date.now()}`, ext);
     router.push({
-      pathname: "/ocr-review/[reportId]",
+      pathname: "/ocr-review/[reportId]" as any,
       params: { reportId: draft.id, uri: internalUri, fileName: picked.asset.fileName },
     });
   }
