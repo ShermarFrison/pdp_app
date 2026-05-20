@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AppText } from "@/components/AppText";
@@ -10,9 +10,24 @@ import { Field } from "@/components/Field";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { SegmentedControl } from "@/components/SegmentedControl";
-import { useApp } from "@/context/AppContext";
+import { ProfileValidationError, useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 import { AdvisorPermission, FarmProfile } from "@/types";
+
+function SyncPill({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    clean: "#16a34a",
+    pending: "#ca8a04",
+    syncing: "#2563eb",
+    conflict: "#dc2626",
+    error: "#7c2d12",
+  };
+  return (
+    <View style={{ alignSelf: "flex-start", backgroundColor: colors[status] ?? "#666", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 }}>
+      <Text style={{ color: "white", fontSize: 12 }}>{status}</Text>
+    </View>
+  );
+}
 
 type Errors = Partial<Record<keyof FarmProfile, string>>;
 
@@ -68,8 +83,17 @@ export default function ProfileScreen() {
       return;
     }
 
-    await saveProfile(form);
-    setMessage("Profile saved locally.");
+    try {
+      await saveProfile(form);
+      setMessage("Profile saved locally.");
+    } catch (err) {
+      if (err instanceof ProfileValidationError) {
+        setErrors(err.errors as Errors);
+        setMessage("Fix the required fields before saving.");
+      } else {
+        throw err;
+      }
+    }
   }
 
   async function handleSync() {
@@ -81,9 +105,18 @@ export default function ProfileScreen() {
       return;
     }
 
-    await saveProfile(form);
-    await syncProfile();
-    setMessage("Profile synced to the mocked backend.");
+    try {
+      await saveProfile(form);
+      await syncProfile();
+      setMessage("Profile synced to the mocked backend.");
+    } catch (err) {
+      if (err instanceof ProfileValidationError) {
+        setErrors(err.errors as Errors);
+        setMessage("Complete the required fields before syncing.");
+      } else {
+        throw err;
+      }
+    }
   }
 
   function toggleOffset(days: number) {
@@ -123,6 +156,7 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <AppText variant="title">{t("profile.title", language)}</AppText>
         <AppText tone="muted">{t("profile.subtitle", language)}</AppText>
+        <SyncPill status={farmProfile.syncStatus ?? "clean"} />
       </View>
 
       <Card>

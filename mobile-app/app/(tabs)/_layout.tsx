@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect } from "expo-router";
+import { Link, Redirect } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/AppText";
@@ -26,6 +26,23 @@ const TAB_ITEMS_BASE = [
   { key: "audit", i18nKey: "tab.audit" as const, icon: "shield-checkmark-outline" as const, iconActive: "shield-checkmark" as const },
 ];
 
+function ConflictsBanner() {
+  const { syncConflicts } = useApp();
+  const unresolved = syncConflicts.filter((c) => !c.resolvedAt);
+  if (unresolved.length === 0) return null;
+  return (
+    <View style={{ backgroundColor: "#fde68a", padding: 8 }}>
+      <Link href={`/conflicts/${unresolved[0].id}` as any} asChild>
+        <Pressable>
+          <Text style={{ fontWeight: "600" }}>
+            {unresolved.length} conflict{unresolved.length === 1 ? "" : "s"} to resolve — tap to fix
+          </Text>
+        </Pressable>
+      </Link>
+    </View>
+  );
+}
+
 export default function TabLayout() {
   const { sessionUser, regulationChanges, language } = useApp();
   const tabItems = TAB_ITEMS_BASE.map((tab) => ({ ...tab, title: t(tab.i18nKey, language) }));
@@ -40,6 +57,7 @@ export default function TabLayout() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ConflictsBanner />
       {/* TOP TAB BAR */}
       <View style={styles.topBar}>
         {tabItems.map((tab) => {
