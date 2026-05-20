@@ -22,7 +22,9 @@ export async function loadState(): Promise<AppState> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
 
   if (!raw) {
-    return INITIAL_STATE;
+    // First launch: signal absence of a persisted language so the context can
+    // seed it from device locale.
+    return { ...INITIAL_STATE, language: undefined as unknown as AppState["language"] };
   }
 
   try {
@@ -30,7 +32,7 @@ export async function loadState(): Promise<AppState> {
     const { syncQueue: _q, syncConflicts: _c, ...rest } = parsed;
     return rest as AppState;
   } catch {
-    return INITIAL_STATE;
+    return { ...INITIAL_STATE, language: undefined as unknown as AppState["language"] };
   }
 }
 

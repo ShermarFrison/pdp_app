@@ -13,6 +13,7 @@ import {
   SEEDED_REPORTS,
 } from "@/data/seed";
 import { loadState, migrateLegacySyncSlices, saveState } from "@/lib/storage";
+import { getInitialLanguage } from "@/lib/i18n";
 import {
   createSyncQueue,
   LocalSimulatedSyncClient,
@@ -193,7 +194,7 @@ export function AppProvider({ children }: PropsWithChildren) {
         isOnline: loaded.isOnline ?? true,
         ocrExtractions: loaded.ocrExtractions ?? [],
         advisors: loaded.advisors ?? [],
-        language: loaded.language ?? DEFAULT_LANGUAGE,
+        language: loaded.language ?? getInitialLanguage(),
       }));
       setIsHydrated(true);
       if (migration.kind === "migrated" && !migrationLoggedRef.current) {
